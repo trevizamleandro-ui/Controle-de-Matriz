@@ -37,7 +37,7 @@ server:
 
 app:
   jwt:
-    secret: dacarto-matrizes-dev-secret-key-2024
+    secret: dacarto-matrizes-dev-secret-2024
     expiration-ms: 86400000
 
   supabase:
@@ -47,7 +47,7 @@ app:
     storage-bucket: anexos-tecnicos
 
   cors:
-    allowed-origins: http://localhost:5173
+    allowed-origins: http://localhost:5173,https://controle-de-matriz-b1scfdamb-trevizamleandro-uis-projects.vercel.app
 
   sap:
     enabled: false

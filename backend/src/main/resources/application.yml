@@ -20,6 +20,7 @@ app:
     allowed-origins:
       - http://localhost:5173
       - http://localhost:3000
+      - https://controle-de-matriz-b1scfdamb-trevizamleandro-uis-projects.vercel.app
 
   supabase:
     url: https://mgmffwccsdomwzolqvhe.supabase.co

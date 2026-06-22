@@ -56,7 +56,11 @@ function ModalItem({ item, onSave, onClose }) {
       setJsonError('JSON inválido. Verifique a formatação.');
       return;
     }
-    onSave({ ...form, caracteristicasTecnicas: JSON.parse(form.caracteristicasTecnicas) });
+    onSave({ 
+      ...form, 
+      caracteristicasTecnicas: JSON.parse(form.caracteristicasTecnicas),
+      custoUnitario: form.custoUnitario ? parseFloat(String(form.custoUnitario).replace(',', '.')) : null
+    });
   };
 
   return (

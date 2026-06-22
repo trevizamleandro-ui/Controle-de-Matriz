@@ -1,0 +1,111 @@
+spring:
+  application:
+    name: matrizes-api
+
+# ============================================================
+# Configurações comuns a todos os perfis
+# ============================================================
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+app:
+  jwt:
+    secret: dacarto-matrizes-dev-secret-2024
+    expiration-ms: 86400000
+
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
+
+  supabase:
+    url: https://mgmffwccsdomwzolqvhe.supabase.co
+    anon-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nbWZmd2Njc2RvbXd6b2xxdmhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTc5OTUsImV4cCI6MjA5NjkzMzk5NX0.PnVtpHe1Va_9pXMr9XocVIktfe3OcPSU1q8i4bTpClg
+    service-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nbWZmd2Njc2RvbXd6b2xxdmhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTM1Nzk5NSwiZXhwIjoyMDk2OTMzOTk1fQ.3KXyEbOHcoVkCg833gPe4Zpx8_h9hFurY8NJvXF5pkQ
+    storage-bucket: anexos-tecnicos
+
+  sap:
+    enabled: false
+
+logging:
+  level:
+    com.dacarto.matrizes: DEBUG
+    org.springframework.security: WARN
+
+---
+# ============================================================
+# Perfil: default / dev — H2 em memória
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: default
+
+  datasource:
+    url: jdbc:h2:file:./data/matrizes;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+---
+# ============================================================
+# Perfil: prod — PostgreSQL Supabase
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    # Conexão direta com Session Pooler Supabase
+    url: jdbc:postgresql://aws-1-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
+    username: postgres.mgmffwccsdomwzolqvhe
+    password: Dacarto12345@@@
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: America/Sao_Paulo
+
+  flyway:
+    enabled: false
+
+logging:
+  level:
+    com.dacarto.matrizes: INFO
+    org.hibernate.SQL: WARN

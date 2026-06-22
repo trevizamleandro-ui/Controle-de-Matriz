@@ -401,10 +401,8 @@ export default function Inventario() {
   });
 
   const handleSalvar = async (dados) => {
-    const payload = {
-      ...dados,
-      status: mapUiStatusToEnum(dados.status)
-    };
+    // O backend (Jackson) com @JsonValue espera exatamente "Em Estoque", "Em Uso", etc.
+    const payload = { ...dados };
     try {
       if (modalEdicao) {
         await matrizesApi.atualizar(modalEdicao.id, payload);

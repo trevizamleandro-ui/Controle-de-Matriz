@@ -1,0 +1,39 @@
+# Ignorar pastas de dependências
+frontend/node_modules/
+backend/target/
+
+# Arquivos de log
+*.log
+backend/*.log
+frontend/*.log
+
+# Chaves de ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs e Ferramentas
+.vscode/
+.idea/
+.settings/
+.classpath
+.project
+.factorypath
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Pastas de build
+frontend/dist/
+frontend/dist-electron/
+frontend/out/
+
+# Binários
+*.jar
+*.class
+*.exe

@@ -12,7 +12,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/maquinas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class MaquinaController {
 
     private final MaquinaService service;

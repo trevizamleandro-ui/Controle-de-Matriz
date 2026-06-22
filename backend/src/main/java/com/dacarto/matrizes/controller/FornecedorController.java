@@ -13,7 +13,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/fornecedores")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class FornecedorController {
 
     private final FornecedorRepository fornecedorRepository;

@@ -14,7 +14,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class UsuarioController {
 
     private final UsuarioRepository usuarioRepository;

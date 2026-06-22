@@ -13,7 +13,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/reparos")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Para simplificar dev
+
 public class ReparoController {
 
     private final ReparoService service;

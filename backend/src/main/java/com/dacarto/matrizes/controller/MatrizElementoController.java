@@ -16,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/matrizes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class MatrizElementoController {
 
     private final MatrizElementoService service;

@@ -139,10 +139,6 @@ function Layout() {
         {/* Header Menu Bar */}
         <div className="app-toolbar">
           <div style={{ fontWeight: 'bold', color: '#004F5C', marginRight: 16 }}>DACARTO</div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: '11px', color: '#0F7D46', fontWeight: 'bold' }}>
-            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#0F7D46' }}></span>
-            ONLINE (PLC ATIVO)
-          </div>
         </div>
 
         {/* Editor Tab Bar */}

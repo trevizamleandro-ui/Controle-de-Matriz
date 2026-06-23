@@ -1,6 +1,148 @@
 import { useState, useEffect, useCallback } from 'react';
 import { matrizesApi } from '../services/api';
 
+// ---- GERADOR DE RELATÓRIO PDF (via impressão do navegador) ----
+function gerarRelatorio(items, filtroStatus, filtroTipo, busca) {
+  const agora = new Date();
+  const dataHora = agora.toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
+
+  const totalValor = items.reduce((s, i) => s + (i.custo_unitario || 0) * (i.quantidade_estoque || 0), 0);
+  const fmtMoeda  = (v) => v == null ? '—' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+  const contagem = {
+    total:      items.length,
+    emUso:      items.filter(i => i.status === 'Em Uso').length,
+    emEstoque:  items.filter(i => i.status === 'Em Estoque').length,
+    emReparo:   items.filter(i => i.status === 'Em Reparo').length,
+    desativado: items.filter(i => i.status === 'Desativado').length,
+    alertas:    items.filter(i => i.quantidade_estoque < i.estoque_minimo && i.status !== 'Desativado').length,
+  };
+
+  const statusColor = { 'Em Uso': '#3b82f6', 'Em Estoque': '#10b981', 'Em Reparo': '#f59e0b', 'Desativado': '#6b7280' };
+  const tipoColor   = { 'Matriz': '#8b5cf6', 'Elemento': '#06b6d4' };
+
+  const filtrosAtivos = [
+    busca        && `Busca: "${busca}"`,
+    filtroStatus && `Status: ${filtroStatus}`,
+    filtroTipo   && `Tipo: ${filtroTipo}`,
+  ].filter(Boolean).join(' | ');
+
+  const linhas = items.map(item => {
+    const alerta = item.quantidade_estoque < item.estoque_minimo && item.status !== 'Desativado';
+    return `
+      <tr style="${alerta ? 'background:#fff5f5;' : ''}">
+        <td style="font-family:monospace;font-weight:700;color:#1e293b">${item.tag_identificacao || '—'}</td>
+        <td style="font-weight:600;color:#1e293b;max-width:180px">${item.nome || '—'}</td>
+        <td><span style="background:${tipoColor[item.tipo] || '#64748b'}22;color:${tipoColor[item.tipo] || '#64748b'};border:1px solid ${tipoColor[item.tipo] || '#64748b'}44;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${item.tipo || '—'}</span></td>
+        <td style="font-size:12px">${item.material || '—'}</td>
+        <td><span style="background:${statusColor[item.status] || '#64748b'}22;color:${statusColor[item.status] || '#64748b'};border:1px solid ${statusColor[item.status] || '#64748b'}44;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${item.status || '—'}</span></td>
+        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${item.localizacao_atual || '—'}</td>
+        <td style="text-align:center">
+          <span style="font-weight:700;color:${alerta ? '#dc2626' : '#1e293b'}">${item.quantidade_estoque ?? 0}</span>
+          <span style="color:#94a3b8;font-size:11px">/${item.estoque_minimo ?? 0}</span>
+          ${alerta ? '<span style="color:#dc2626;font-size:11px"> ⚠️</span>' : ''}
+        </td>
+        <td style="text-align:right;font-family:monospace;font-size:12px">${fmtMoeda(item.custo_unitario)}</td>
+        <td style="text-align:right;font-family:monospace;font-size:12px;font-weight:600">${fmtMoeda((item.custo_unitario || 0) * (item.quantidade_estoque || 0))}</td>
+        <td style="font-size:11px;max-width:160px">${item.modelo || '—'}</td>
+      </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Inventário de Matrizes — ${agora.toLocaleDateString('pt-BR')}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1e293b; background: #fff; padding: 32px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 3px solid #1e293b; }
+    .header-left h1 { font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+    .header-left p  { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .header-right { text-align: right; font-size: 11px; color: #64748b; line-height: 1.8; }
+    .header-right strong { color: #1e293b; }
+    .summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
+    .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; }
+    .summary-card .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; margin-bottom: 4px; }
+    .summary-card .value { font-size: 20px; font-weight: 800; color: #0f172a; }
+    .summary-card .value.alerta { color: #dc2626; }
+    .filtros { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 14px; margin-bottom: 18px; font-size: 11px; color: #475569; }
+    .filtros strong { color: #1e293b; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #0f172a; color: #fff; padding: 9px 10px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+    td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    .footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; }
+    .total-row { background: #f1f5f9; font-weight: 700; }
+    @media print {
+      body { padding: 14px; }
+      .no-print { display: none; }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; page-break-after: auto; }
+      thead { display: table-header-group; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>📊 Relatório de Inventário de Matrizes</h1>
+      <p>Dacarto — Sistema de Controle de Matrizes</p>
+    </div>
+    <div class="header-right">
+      <strong>Gerado em:</strong><br/>${dataHora}
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-card"><div class="label">Total</div><div class="value">${contagem.total}</div></div>
+    <div class="summary-card"><div class="label">Em Estoque</div><div class="value" style="color:#10b981">${contagem.emEstoque}</div></div>
+    <div class="summary-card"><div class="label">Em Uso</div><div class="value" style="color:#3b82f6">${contagem.emUso}</div></div>
+    <div class="summary-card"><div class="label">Em Reparo</div><div class="value" style="color:#f59e0b">${contagem.emReparo}</div></div>
+    <div class="summary-card"><div class="label">Desativado</div><div class="value" style="color:#6b7280">${contagem.desativado}</div></div>
+    <div class="summary-card"><div class="label">⚠️ Alertas</div><div class="value alerta">${contagem.alertas}</div></div>
+  </div>
+
+  ${filtrosAtivos ? `<div class="filtros"><strong>Filtros aplicados:</strong> ${filtrosAtivos}</div>` : ''}
+
+  <table>
+    <thead>
+      <tr>
+        <th>TAG</th><th>Nome</th><th>Tipo</th><th>Material</th>
+        <th>Status</th><th>Localização</th><th style="text-align:center">Estoque</th>
+        <th style="text-align:right">Custo Unit.</th>
+        <th style="text-align:right">Valor Total</th>
+        <th>Modelo</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${linhas}
+      <tr class="total-row">
+        <td colspan="8" style="text-align:right;font-size:12px">VALOR TOTAL DO INVENTÁRIO:</td>
+        <td style="text-align:right;font-family:monospace;font-size:13px;color:#0f172a">${fmtMoeda(totalValor)}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>Total: ${contagem.total} item(s) listado(s)</span>
+    <span>Dacarto — Controle de Matrizes</span>
+  </div>
+
+  <script>
+    window.onload = function() { window.print(); };
+  <\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { alert('Permita pop-ups para gerar o relatório.'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
 // ---- HELPERS ----
 function statusBadge(s) {
   const cls  = { 'Em Uso': 'badge-em-uso', 'Em Estoque': 'badge-em-estoque', 'Em Reparo': 'badge-em-reparo', 'Desativado': 'badge-desativado' };
@@ -455,7 +597,17 @@ export default function Inventario() {
             )}
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setModalCadastro(true)}>➕ Novo Cadastro</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => gerarRelatorio(items, filtroStatus, filtroTipo, busca)}
+            disabled={items.length === 0}
+            title="Gerar relatório PDF do inventário atual"
+          >
+            📄 Exportar Relatório
+          </button>
+          <button className="btn btn-primary" onClick={() => setModalCadastro(true)}>➕ Novo Cadastro</button>
+        </div>
       </div>
 
       {erro && <div className="alert-strip danger" style={{ marginBottom: 12 }}>⚠️ {erro}</div>}

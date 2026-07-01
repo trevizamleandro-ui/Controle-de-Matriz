@@ -68,16 +68,16 @@ function MiniDonut({ data }) {
           );
         })}
         <text x="55" y="55" textAnchor="middle" dominantBaseline="middle"
-          fill="#f1f5f9" fontSize="18" fontWeight="800">{total}</text>
+          fill="var(--color-text-primary)" fontSize="18" fontWeight="800">{total}</text>
         <text x="55" y="68" textAnchor="middle" dominantBaseline="middle"
-          fill="#94a3b8" fontSize="9">itens</text>
+          fill="var(--color-text-secondary)" fontSize="9">itens</text>
       </svg>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {data.map((d, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.cor, flexShrink: 0 }} />
             <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{d.label}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', marginLeft: 4 }}>{d.valor}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)', marginLeft: 4 }}>{d.valor}</span>
           </div>
         ))}
       </div>

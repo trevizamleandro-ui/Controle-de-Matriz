@@ -44,6 +44,8 @@ public interface MatrizElementoRepository extends JpaRepository<MatrizElemento, 
 
     // KPIs do dashboard
     long countByStatus(MatrizElemento.ItemStatus status);
+    long countByTipo(MatrizElemento.ItemTipo tipo);
+    long countByStatusAndTipo(MatrizElemento.ItemStatus status, MatrizElemento.ItemTipo tipo);
 
     @Query("SELECT COALESCE(SUM(m.custoUnitario * m.quantidadeEstoque), 0) FROM MatrizElemento m WHERE m.status != 'DESATIVADO'")
     java.math.BigDecimal calcularValorTotalInventario();

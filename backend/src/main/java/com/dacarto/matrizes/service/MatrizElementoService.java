@@ -138,14 +138,29 @@ public class MatrizElementoService {
 
     public Map<String, Object> calcularKpis() {
         List<MatrizElemento> abaixo = repository.findAbaixoEstoqueMinimo();
-        return Map.of(
-            "totalItens", repository.count(),
-            "emUso", repository.countByStatus(MatrizElemento.ItemStatus.EM_USO),
-            "emEstoque", repository.countByStatus(MatrizElemento.ItemStatus.EM_ESTOQUE),
-            "emReparo", repository.countByStatus(MatrizElemento.ItemStatus.EM_REPARO),
-            "desativados", repository.countByStatus(MatrizElemento.ItemStatus.DESATIVADO),
-            "abaixoEstoqueMinimo", abaixo.size(),
-            "valorTotalInventario", repository.calcularValorTotalInventario()
+        return Map.ofEntries(
+            Map.entry("totalItens", repository.count()),
+            Map.entry("totalMatrizes", repository.countByTipo(MatrizElemento.ItemTipo.Matriz)),
+            Map.entry("totalElementos", repository.countByTipo(MatrizElemento.ItemTipo.Elemento)),
+            
+            Map.entry("emUso", repository.countByStatus(MatrizElemento.ItemStatus.EM_USO)),
+            Map.entry("emUsoMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_USO, MatrizElemento.ItemTipo.Matriz)),
+            Map.entry("emUsoElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_USO, MatrizElemento.ItemTipo.Elemento)),
+            
+            Map.entry("emEstoque", repository.countByStatus(MatrizElemento.ItemStatus.EM_ESTOQUE)),
+            Map.entry("emEstoqueMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_ESTOQUE, MatrizElemento.ItemTipo.Matriz)),
+            Map.entry("emEstoqueElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_ESTOQUE, MatrizElemento.ItemTipo.Elemento)),
+            
+            Map.entry("emReparo", repository.countByStatus(MatrizElemento.ItemStatus.EM_REPARO)),
+            Map.entry("emReparoMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_REPARO, MatrizElemento.ItemTipo.Matriz)),
+            Map.entry("emReparoElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_REPARO, MatrizElemento.ItemTipo.Elemento)),
+            
+            Map.entry("desativados", repository.countByStatus(MatrizElemento.ItemStatus.DESATIVADO)),
+            Map.entry("desativadosMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.DESATIVADO, MatrizElemento.ItemTipo.Matriz)),
+            Map.entry("desativadosElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.DESATIVADO, MatrizElemento.ItemTipo.Elemento)),
+            
+            Map.entry("abaixoEstoqueMinimo", abaixo.size()),
+            Map.entry("valorTotalInventario", repository.calcularValorTotalInventario())
         );
     }
 

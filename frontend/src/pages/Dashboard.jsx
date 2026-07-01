@@ -179,9 +179,10 @@ export default function Dashboard() {
 
       {/* KPI Grid */}
       <div className="kpi-grid">
-        <KpiCard icon="🔩" value={kpis.totalItens}          label="Total de Itens"       colorClass="blue" />
+        <KpiCard icon="🔩" value={kpis.totalMatrizes || 0}   label="Total de Matrizes"    colorClass="blue" />
+        <KpiCard icon="⚙️" value={kpis.totalElementos || 0}  label="Total de Elementos"   colorClass="cyan" />
         <KpiCard icon="✅" value={kpis.emUso}               label="Em Uso"                colorClass="green" />
-        <KpiCard icon="📦" value={kpis.emEstoque}           label="Em Estoque"            colorClass="cyan" />
+        <KpiCard icon="📦" value={kpis.emEstoque}           label="Em Estoque"            colorClass="blue" />
         <KpiCard icon="🔧" value={kpis.emReparo}            label="Em Reparo"             colorClass="orange" />
         <KpiCard icon="⚠️" value={kpis.abaixoEstoqueMinimo} label="Abaixo do Mínimo"      colorClass="red" />
         <KpiCard icon="💰" value={formatMoeda(kpis.valorTotalInventario)} label="Valor do Inventário" colorClass="purple" />
@@ -193,7 +194,31 @@ export default function Dashboard() {
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 20, color: 'var(--color-text-primary)' }}>
             📊 Distribuição por Status
           </h3>
-          <MiniDonut data={statusChart} />
+          <div style={{ display: 'flex', gap: 32, alignItems: 'center', flexWrap: 'wrap' }}>
+            <MiniDonut data={statusChart} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, minWidth: 200 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-bg-glass)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                <span className="badge badge-em-estoque">Em Estoque</span>
+                <span style={{ fontSize: 12 }}>Matrizes: <strong>{kpis.emEstoqueMatrizes || 0}</strong></span>
+                <span style={{ fontSize: 12 }}>Elementos: <strong>{kpis.emEstoqueElementos || 0}</strong></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-bg-glass)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                <span className="badge badge-em-uso">Em Uso</span>
+                <span style={{ fontSize: 12 }}>Matrizes: <strong>{kpis.emUsoMatrizes || 0}</strong></span>
+                <span style={{ fontSize: 12 }}>Elementos: <strong>{kpis.emUsoElementos || 0}</strong></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-bg-glass)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                <span className="badge badge-em-reparo">Em Reparo</span>
+                <span style={{ fontSize: 12 }}>Matrizes: <strong>{kpis.emReparoMatrizes || 0}</strong></span>
+                <span style={{ fontSize: 12 }}>Elementos: <strong>{kpis.emReparoElementos || 0}</strong></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-bg-glass)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                <span className="badge badge-desativado">Desativado</span>
+                <span style={{ fontSize: 12 }}>Matrizes: <strong>{kpis.desativadosMatrizes || 0}</strong></span>
+                <span style={{ fontSize: 12 }}>Elementos: <strong>{kpis.desativadosElementos || 0}</strong></span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Alertas */}

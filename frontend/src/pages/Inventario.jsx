@@ -486,7 +486,7 @@ export default function Inventario() {
     setErro('');
     try {
       const apiStatus = mapUiStatusToEnum(filtroStatus);
-      const response = await matrizesApi.listar({ busca, status: apiStatus, tipo: filtroTipo });
+      const response = await matrizesApi.listar({ busca, status: apiStatus, tipo: filtroTipo, size: 2000 });
       const rawList = response?.content || response?.data || response || [];
       
       // Mapear para manter compatibilidade com snake_case esperado no JSX da tabela

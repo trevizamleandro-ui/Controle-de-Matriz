@@ -47,6 +47,12 @@ public interface MatrizElementoRepository extends JpaRepository<MatrizElemento, 
     long countByTipo(MatrizElemento.ItemTipo tipo);
     long countByStatusAndTipo(MatrizElemento.ItemStatus status, MatrizElemento.ItemTipo tipo);
 
+    @Query("SELECT COALESCE(SUM(m.quantidadeEstoque), 0) FROM MatrizElemento m WHERE m.tipo = :tipo")
+    Long sumEstoqueByTipo(@Param("tipo") MatrizElemento.ItemTipo tipo);
+
+    @Query("SELECT COALESCE(SUM(m.quantidadeEstoque), 0) FROM MatrizElemento m")
+    Long sumEstoqueTotal();
+
     @Query("SELECT COALESCE(SUM(m.custoUnitario * m.quantidadeEstoque), 0) FROM MatrizElemento m WHERE m.status != 'DESATIVADO'")
     java.math.BigDecimal calcularValorTotalInventario();
 }

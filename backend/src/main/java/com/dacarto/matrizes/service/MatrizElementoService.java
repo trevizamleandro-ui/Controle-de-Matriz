@@ -139,9 +139,9 @@ public class MatrizElementoService {
     public Map<String, Object> calcularKpis() {
         List<MatrizElemento> abaixo = repository.findAbaixoEstoqueMinimo();
         return Map.ofEntries(
-            Map.entry("totalItens", repository.count()),
-            Map.entry("totalMatrizes", repository.countByTipo(MatrizElemento.ItemTipo.Matriz)),
-            Map.entry("totalElementos", repository.countByTipo(MatrizElemento.ItemTipo.Elemento)),
+            Map.entry("totalItens", repository.sumEstoqueTotal()),
+            Map.entry("totalMatrizes", repository.sumEstoqueByTipo(MatrizElemento.ItemTipo.Matriz)),
+            Map.entry("totalElementos", repository.sumEstoqueByTipo(MatrizElemento.ItemTipo.Elemento)),
             
             Map.entry("emUso", repository.countByStatus(MatrizElemento.ItemStatus.EM_USO)),
             Map.entry("emUsoMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_USO, MatrizElemento.ItemTipo.Matriz)),

@@ -47,6 +47,10 @@ public class MatrizElementoService {
         return repository.findAll(pageable);
     }
 
+    public List<MatrizElemento> listarTodos() {
+        return repository.findAllAtivos();
+    }
+
     public MatrizElemento buscarPorId(UUID id) {
         return repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Matriz/Elemento não encontrado: " + id));

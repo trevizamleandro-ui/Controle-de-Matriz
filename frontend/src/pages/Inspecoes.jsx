@@ -728,7 +728,7 @@ export default function Inspecoes() {
   // Carregar matrizes separadamente (apenas uma vez no mount)
   const carregarMatrizes = useCallback(async () => {
     try {
-      const matsResponse = await matrizesApi.listar({ size: 1000 });
+      const matsResponse = await matrizesApi.listarTodos();
       setMatrizes(matsResponse?.content || matsResponse?.data || matsResponse || []);
     } catch (e) {
       console.error('Erro ao carregar matrizes:', e);

@@ -37,6 +37,11 @@ public class MatrizElementoController {
         return ResponseEntity.ok(service.listar(busca, status, tipo, page, size, ordenarPor));
     }
 
+    @GetMapping("/todos")
+    public ResponseEntity<List<MatrizElemento>> listarTodos() {
+        return ResponseEntity.ok(service.listarTodos());
+    }
+
     /**
      * GET /api/v1/matrizes/dashboard
      * KPIs para o dashboard principal

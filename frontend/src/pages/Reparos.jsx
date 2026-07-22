@@ -267,7 +267,7 @@ export default function Reparos() {
 
   const carregarMatrizesEFornecedores = useCallback(async () => {
     try {
-      const resMats = await matrizesApi.listar();
+      const resMats = await matrizesApi.listarTodos();
       setMatrizes(resMats?.content || resMats?.data || resMats || []);
 
       const resForns = await fornecedoresApi.listar();

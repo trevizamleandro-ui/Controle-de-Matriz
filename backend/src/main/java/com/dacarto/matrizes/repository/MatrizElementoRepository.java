@@ -29,6 +29,10 @@ public interface MatrizElementoRepository extends JpaRepository<MatrizElemento, 
 
     Page<MatrizElemento> findByTipo(MatrizElemento.ItemTipo tipo, Pageable pageable);
 
+    // Todos os itens não-desativados, sem paginação (para dropdowns)
+    @Query("SELECT m FROM MatrizElemento m WHERE m.status != com.dacarto.matrizes.model.MatrizElemento.ItemStatus.DESATIVADO ORDER BY m.tagIdentificacao ASC")
+    List<MatrizElemento> findAllAtivos();
+
     // Itens com estoque abaixo do mínimo
     @Query("SELECT m FROM MatrizElemento m WHERE m.quantidadeEstoque < m.estoqueMinimo AND m.status != 'DESATIVADO'")
     List<MatrizElemento> findAbaixoEstoqueMinimo();

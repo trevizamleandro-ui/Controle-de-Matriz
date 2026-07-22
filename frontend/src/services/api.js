@@ -70,6 +70,8 @@ export const matrizesApi = {
     return request(`/matrizes?${params}`);
   },
 
+  listarTodos: () => request('/matrizes/todos'),
+
   buscarPorId:  (id)  => request(`/matrizes/${id}`),
   buscarPorTag: (tag) => request(`/matrizes/tag/${tag}`),
   dashboard:    ()    => request('/matrizes/dashboard'),

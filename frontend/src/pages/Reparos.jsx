@@ -86,32 +86,30 @@ function ModalEnvio({ reparo, matrizes, fornecedores, onSave, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg">
+      <div className="modal modal-xl">
         <div className="modal-header">
           <h3 className="modal-title">{reparo ? '✏️ Editar Envio' : '📤 Enviar para Reparo'}</h3>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         
         <div className="modal-body">
-          <div className="grid-2" style={{ gap: 16 }}>
-            <div className="form-group">
-              <label className="form-label">Peça com Defeito *</label>
-              <select className="form-select" value={form.matrizElementoId} onChange={e => set('matrizElementoId', e.target.value)}>
-                <option value="">-- Selecione a Peça --</option>
-                {matrizes.map(m => (
-                  <option key={m.id} value={m.id}>{m.tagIdentificacao || m.tag_identificacao} - {m.nome}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Fornecedor / Ferramentaria *</label>
-              <select className="form-select" value={form.fornecedorId} onChange={e => set('fornecedorId', e.target.value)}>
-                <option value="">-- Selecione o Fornecedor --</option>
-                {fornecedores.map(f => (
-                  <option key={f.id} value={f.id}>{f.nome}</option>
-                ))}
-              </select>
-            </div>
+          <div className="form-group">
+            <label className="form-label">Peça com Defeito *</label>
+            <select className="form-select" value={form.matrizElementoId} onChange={e => set('matrizElementoId', e.target.value)}>
+              <option value="">-- Selecione a Peça --</option>
+              {matrizes.map(m => (
+                <option key={m.id} value={m.id}>{m.tagIdentificacao || m.tag_identificacao} - {m.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Fornecedor / Ferramentaria *</label>
+            <select className="form-select" value={form.fornecedorId} onChange={e => set('fornecedorId', e.target.value)}>
+              <option value="">-- Selecione o Fornecedor --</option>
+              {fornecedores.map(f => (
+                <option key={f.id} value={f.id}>{f.nome}</option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">

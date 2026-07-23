@@ -598,6 +598,9 @@ a:hover { text-decoration: underline; }
   flex-direction: column;
 }
 
+.modal.modal-lg { max-width: 750px; }
+.modal.modal-xl { max-width: 950px; }
+
 .modal-header {
   padding: 8px 12px;
   background: #00667A; /* Cabeçalho azul petrol */

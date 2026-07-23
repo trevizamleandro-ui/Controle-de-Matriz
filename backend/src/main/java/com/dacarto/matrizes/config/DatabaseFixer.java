@@ -47,6 +47,11 @@ public class DatabaseFixer implements CommandLineRunner {
             addColumnIfNotExists("pressao", "varchar(50)");
             addColumnIfNotExists("tipo_corte", "varchar(50)");
 
+            // Colunas de localização física (adicionadas em 2026-07)
+            addColumnIfNotExistsWithDefault("quantidade_almoxarifado", "integer", "0");
+            addColumnIfNotExistsWithDefault("quantidade_maquina", "integer", "0");
+            addColumnIfNotExistsWithDefault("quantidade_reparo", "integer", "0");
+
             log.info("Database fixer completed successfully.");
         } catch (Exception e) {
             log.error("Failed to run database fixer: ", e);
@@ -59,6 +64,17 @@ public class DatabaseFixer implements CommandLineRunner {
             log.info("Column {} checked/added successfully.", columnName);
         } catch (Exception ex) {
             log.warn("Could not check/add column {}: {}", columnName, ex.getMessage());
+        }
+    }
+
+    private void addColumnIfNotExistsWithDefault(String columnName, String columnType, String defaultValue) {
+        try {
+            jdbcTemplate.execute(
+                "ALTER TABLE matrizes_elementos ADD COLUMN IF NOT EXISTS " + columnName + " " + columnType + " NOT NULL DEFAULT " + defaultValue
+            );
+            log.info("Column {} checked/added with default {} successfully.", columnName, defaultValue);
+        } catch (Exception ex) {
+            log.warn("Could not check/add column {} with default: {}", columnName, ex.getMessage());
         }
     }
 }

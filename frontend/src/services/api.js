@@ -72,6 +72,9 @@ export const matrizesApi = {
 
   listarTodos: () => request('/matrizes/todos'),
 
+  ajustarLocalizacao: (id, deltaAlmoxarifado, deltaMaquina) =>
+    request(`/matrizes/${id}/localizacao?deltaAlmoxarifado=${deltaAlmoxarifado}&deltaMaquina=${deltaMaquina}`, { method: 'PATCH' }),
+
   buscarPorId:  (id)  => request(`/matrizes/${id}`),
   buscarPorTag: (tag) => request(`/matrizes/tag/${tag}`),
   dashboard:    ()    => request('/matrizes/dashboard'),

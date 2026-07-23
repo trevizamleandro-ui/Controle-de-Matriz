@@ -47,10 +47,18 @@ public class ReparoService {
         reparo.setMatrizElemento(matrizElemento);
         reparo.setFornecedor(fornecedor);
         
-        // Atualiza status da matriz para Em Reparo, se necessário
+        // Atualiza status da matriz para Em Reparo
         if (reparo.getStatusReparo() == Reparo.ReparoStatus.ENVIADO || reparo.getStatusReparo() == Reparo.ReparoStatus.EM_REPARO) {
             matrizElemento.setStatus(MatrizElemento.ItemStatus.EM_REPARO);
         }
+
+        // Ajusta localização: Almoxarifado -1, Em Reparo +1
+        matrizElemento.inicializarLocalizacaoSeNecessario();
+        int almox = matrizElemento.getQuantidadeAlmoxarifado() != null ? matrizElemento.getQuantidadeAlmoxarifado() : 0;
+        matrizElemento.setQuantidadeAlmoxarifado(Math.max(0, almox - 1));
+        int rep = matrizElemento.getQuantidadeReparo() != null ? matrizElemento.getQuantidadeReparo() : 0;
+        matrizElemento.setQuantidadeReparo(rep + 1);
+        matrizElemento.sincronizarEstoque();
 
         Reparo salvo = repository.save(reparo);
         log.info("Reparo criado: [{}] para TAG {}", salvo.getId(), matrizElemento.getTagIdentificacao());
@@ -82,9 +90,24 @@ public class ReparoService {
         existente.setNumeroNfEnvio(dados.getNumeroNfEnvio());
         existente.setNumeroNfRetorno(dados.getNumeroNfRetorno());
 
-        // Se finalizou e aprovou, volta para em uso/estoque
+        // Se finalizou (aprovado, reprovado ou retornado), move de Reparo de volta para Almoxarifado
+        boolean eraEmReparo = existente.getStatusReparo() == Reparo.ReparoStatus.ENVIADO
+                || existente.getStatusReparo() == Reparo.ReparoStatus.EM_REPARO;
+        boolean foiConcluido = dados.getStatusReparo() == Reparo.ReparoStatus.APROVADO_POS_REPARO
+                || dados.getStatusReparo() == Reparo.ReparoStatus.REPROVADO_POS_REPARO
+                || dados.getStatusReparo() == Reparo.ReparoStatus.RETORNADO;
+
+        MatrizElemento matriz = existente.getMatrizElemento();
+        if (eraEmReparo && foiConcluido) {
+            int rep = matriz.getQuantidadeReparo() != null ? matriz.getQuantidadeReparo() : 0;
+            matriz.setQuantidadeReparo(Math.max(0, rep - 1));
+            int almox = matriz.getQuantidadeAlmoxarifado() != null ? matriz.getQuantidadeAlmoxarifado() : 0;
+            matriz.setQuantidadeAlmoxarifado(almox + 1);
+            matriz.sincronizarEstoque();
+        }
+
         if (dados.getStatusReparo() == Reparo.ReparoStatus.APROVADO_POS_REPARO) {
-             existente.getMatrizElemento().setStatus(MatrizElemento.ItemStatus.EM_USO); // Ou outro status adequado
+            matriz.setStatus(MatrizElemento.ItemStatus.EM_USO);
         }
 
         Reparo atualizado = repository.save(existente);

@@ -51,6 +51,19 @@ public class MatrizElementoService {
         return repository.findAllAtivos();
     }
 
+    @Transactional
+    public MatrizElemento ajustarLocalizacao(UUID id, int deltaAlmoxarifado, int deltaMaquina) {
+        MatrizElemento m = buscarPorId(id);
+        // Migração: inicializa campos de localização se registro for legado
+        m.inicializarLocalizacaoSeNecessario();
+        int novoAlmox   = Math.max(0, (m.getQuantidadeAlmoxarifado() != null ? m.getQuantidadeAlmoxarifado() : 0) + deltaAlmoxarifado);
+        int novoMaquina = Math.max(0, (m.getQuantidadeMaquina()     != null ? m.getQuantidadeMaquina()     : 0) + deltaMaquina);
+        m.setQuantidadeAlmoxarifado(novoAlmox);
+        m.setQuantidadeMaquina(novoMaquina);
+        m.sincronizarEstoque();
+        return repository.save(m);
+    }
+
     public MatrizElemento buscarPorId(UUID id) {
         return repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Matriz/Elemento não encontrado: " + id));

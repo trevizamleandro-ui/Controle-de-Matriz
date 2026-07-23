@@ -55,6 +55,18 @@ public class MatrizElemento {
     @Builder.Default
     private Integer quantidadeEstoque = 0;
 
+    @Column(name = "quantidade_almoxarifado", nullable = false)
+    @Builder.Default
+    private Integer quantidadeAlmoxarifado = 0;
+
+    @Column(name = "quantidade_maquina", nullable = false)
+    @Builder.Default
+    private Integer quantidadeMaquina = 0;
+
+    @Column(name = "quantidade_reparo", nullable = false)
+    @Builder.Default
+    private Integer quantidadeReparo = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -107,9 +119,36 @@ public class MatrizElemento {
         this.updatedAt = OffsetDateTime.now();
     }
 
+    // Quantidade total = soma das 3 localizações
+    // Fallback para quantidadeEstoque quando campos novos ainda não foram preenchidos (migração)
+    public Integer getQuantidadeTotal() {
+        int total = (quantidadeAlmoxarifado != null ? quantidadeAlmoxarifado : 0)
+                  + (quantidadeMaquina     != null ? quantidadeMaquina     : 0)
+                  + (quantidadeReparo      != null ? quantidadeReparo      : 0);
+        if (total == 0 && quantidadeEstoque != null && quantidadeEstoque > 0) {
+            return quantidadeEstoque;
+        }
+        return total;
+    }
+
+    // Mantém quantidadeEstoque sincronizado com o total calculado
+    public void sincronizarEstoque() {
+        this.quantidadeEstoque = getQuantidadeTotal();
+    }
+
+    // Inicializa campos de localização para registros legados
+    public void inicializarLocalizacaoSeNecessario() {
+        int total = (quantidadeAlmoxarifado != null ? quantidadeAlmoxarifado : 0)
+                  + (quantidadeMaquina     != null ? quantidadeMaquina     : 0)
+                  + (quantidadeReparo      != null ? quantidadeReparo      : 0);
+        if (total == 0 && quantidadeEstoque != null && quantidadeEstoque > 0) {
+            this.quantidadeAlmoxarifado = this.quantidadeEstoque;
+        }
+    }
+
     // Verifica se o estoque está abaixo do mínimo
     public boolean estoqueAbaixoMinimo() {
-        return this.quantidadeEstoque < this.estoqueMinimo;
+        return getQuantidadeTotal() < this.estoqueMinimo;
     }
 
     public enum ItemTipo {

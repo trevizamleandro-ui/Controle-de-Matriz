@@ -42,6 +42,14 @@ public class MatrizElementoController {
         return ResponseEntity.ok(service.listarTodos());
     }
 
+    @PatchMapping("/{id}/localizacao")
+    public ResponseEntity<MatrizElemento> ajustarLocalizacao(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "0") int deltaAlmoxarifado,
+            @RequestParam(defaultValue = "0") int deltaMaquina) {
+        return ResponseEntity.ok(service.ajustarLocalizacao(id, deltaAlmoxarifado, deltaMaquina));
+    }
+
     /**
      * GET /api/v1/matrizes/dashboard
      * KPIs para o dashboard principal

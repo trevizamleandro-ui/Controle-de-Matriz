@@ -168,7 +168,9 @@ function formatMoeda(v) {
 // ---- MODAL CADASTRO / EDIÇÃO ----
 const EMPTY_FORM = {
   tagIdentificacao: '', nome: '', tipo: 'Matriz', modelo: '', material: '',
-  custoUnitario: '', estoqueMinimo: 1, quantidadeEstoque: 0,
+  custoUnitario: '', estoqueMinimo: 1,
+  quantidadeAlmoxarifado: 0, quantidadeMaquina: 0,
+  quantidadeEstoque: 0,
   status: 'Em Estoque', localizacaoAtual: '', observacoes: '',
   caracteristicasTecnicas: '{}',
   desenhoPdf: null,
@@ -259,9 +261,32 @@ function ModalItem({ item, onSave, onClose }) {
                 value={form.estoqueMinimo} onChange={e => set('estoqueMinimo', parseInt(e.target.value) || 0)} />
             </div>
             <div className="form-group">
-              <label className="form-label">Qtd. em Estoque</label>
-              <input className="form-input" type="number" min="0"
-                value={form.quantidadeEstoque} onChange={e => set('quantidadeEstoque', parseInt(e.target.value) || 0)} />
+              <label className="form-label" style={{ color: 'var(--color-text-muted)', fontSize: 10 }}>Qtd. Total (calculada)</label>
+              <input className="form-input" type="number" readOnly
+                style={{ background: 'var(--color-bg-glass)', cursor: 'default' }}
+                value={(parseInt(form.quantidadeAlmoxarifado) || 0) + (parseInt(form.quantidadeMaquina) || 0)} />
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--color-bg-glass)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px 14px', marginBottom: 12 }}>
+            <div className="form-label" style={{ marginBottom: 10 }}>📍 Localização Física</div>
+            <div className="grid-3">
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">📦 Almoxarifado</label>
+                <input className="form-input" type="number" min="0"
+                  value={form.quantidadeAlmoxarifado} onChange={e => set('quantidadeAlmoxarifado', parseInt(e.target.value) || 0)} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">🏭 Máquina</label>
+                <input className="form-input" type="number" min="0"
+                  value={form.quantidadeMaquina} onChange={e => set('quantidadeMaquina', parseInt(e.target.value) || 0)} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">🔧 Em Reparo</label>
+                <input className="form-input" type="number" readOnly
+                  style={{ background: 'var(--color-bg-glass)', cursor: 'default' }}
+                  value={form.quantidadeReparo || 0} />
+              </div>
             </div>
           </div>
 
@@ -358,7 +383,7 @@ function ModalItem({ item, onSave, onClose }) {
 }
 
 // ---- MODAL DETALHE ----
-function ModalDetalhe({ item, onClose, onEdit }) {
+function ModalDetalhe({ item, onClose, onEdit, onAdjustLocation }) {
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal modal-lg">
@@ -385,7 +410,7 @@ function ModalDetalhe({ item, onClose, onEdit }) {
               ['Material',    item.material      || '—'],
               ['Localização', item.localizacaoAtual || '—'],
               ['Custo Unit.', formatMoeda(item.custoUnitario)],
-              ['Em Estoque',  `${item.quantidadeEstoque} un.`],
+              ['Qtd. Total',  `${item.quantidadeTotal ?? item.quantidadeEstoque ?? 0} un.`],
               ['Mínimo',      `${item.estoqueMinimo} un.`],
             ].map(([label, val]) => (
               <div key={label} style={{ padding: '12px 16px', background: 'var(--color-bg-glass)', borderRadius: 'var(--radius-md)' }}>
@@ -393,6 +418,62 @@ function ModalDetalhe({ item, onClose, onEdit }) {
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)' }}>{val}</div>
               </div>
             ))}
+          </div>
+
+          {/* Controle de Localização Física */}
+          <div style={{ marginBottom: 20 }}>
+            <div className="form-label" style={{ marginBottom: 10 }}>📍 Localização Física</div>
+            <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+              {/* Almoxarifado */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg-glass)' }}>
+                <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>📦 Almoxarifado</span>
+                {onAdjustLocation && (
+                  <>
+                    <button className="btn btn-secondary btn-sm"
+                      onClick={() => onAdjustLocation(item.id, -1, 0)}
+                      disabled={(item.quantidadeAlmoxarifado ?? 0) <= 0}
+                      title="Remover 1 do Almoxarifado">−</button>
+                    <span style={{ width: 46, textAlign: 'center', fontWeight: 700, fontSize: 16, color: '#00667A' }}>
+                      {item.quantidadeAlmoxarifado ?? 0}
+                    </span>
+                    <button className="btn btn-secondary btn-sm"
+                      onClick={() => onAdjustLocation(item.id, 1, 0)}
+                      title="Adicionar 1 ao Almoxarifado">+</button>
+                  </>
+                )}
+              </div>
+              {/* Máquina */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg-card)' }}>
+                <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>🏭 Máquina</span>
+                {onAdjustLocation && (
+                  <>
+                    <button className="btn btn-secondary btn-sm"
+                      onClick={() => onAdjustLocation(item.id, 0, -1)}
+                      disabled={(item.quantidadeMaquina ?? 0) <= 0}
+                      title="Remover 1 da Máquina">−</button>
+                    <span style={{ width: 46, textAlign: 'center', fontWeight: 700, fontSize: 16, color: '#0F7D46' }}>
+                      {item.quantidadeMaquina ?? 0}
+                    </span>
+                    <button className="btn btn-secondary btn-sm"
+                      onClick={() => onAdjustLocation(item.id, 0, 1)}
+                      title="Adicionar 1 à Máquina">+</button>
+                  </>
+                )}
+              </div>
+              {/* Em Reparo (somente leitura) */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: '#FFF9F0' }}>
+                <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>🔧 Em Reparo</span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginRight: 14 }}>automático</span>
+                <span style={{ width: 46, textAlign: 'center', fontWeight: 700, fontSize: 16, color: '#D97706' }}>
+                  {item.quantidadeReparo ?? 0}
+                </span>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 6 }}>
+              Total = <strong style={{ color: 'var(--color-text-primary)' }}>
+                {(item.quantidadeAlmoxarifado ?? 0) + (item.quantidadeMaquina ?? 0) + (item.quantidadeReparo ?? 0)}
+              </strong> un. (mínimo: {item.estoqueMinimo})
+            </div>
           </div>
           {item.caracteristicasTecnicas && Object.keys(item.caracteristicasTecnicas).length > 0 && (
             <div style={{ marginBottom: 16 }}>
@@ -499,7 +580,16 @@ export default function Inventario() {
         custo_unitario: item.custoUnitario != null ? item.custoUnitario : item.custo_unitario,
         caracteristicas_tecnicas: item.caracteristicasTecnicas || item.caracteristicas_tecnicas || {},
         desenho_pdf: item.desenhoPdf || item.desenho_pdf || null,
-        status: mapEnumToUiStatus(item.status)
+        status: mapEnumToUiStatus(item.status),
+        // Campos de localização física
+        quantidade_almoxarifado: item.quantidadeAlmoxarifado ?? item.quantidade_almoxarifado ?? 0,
+        quantidade_maquina:      item.quantidadeMaquina      ?? item.quantidade_maquina      ?? 0,
+        quantidade_reparo:       item.quantidadeReparo       ?? item.quantidade_reparo       ?? 0,
+        quantidade_total:        item.quantidadeTotal        ?? (
+          (item.quantidadeAlmoxarifado ?? 0) +
+          (item.quantidadeMaquina      ?? 0) +
+          (item.quantidadeReparo       ?? 0)
+        ) || item.quantidadeEstoque || 0,
       }));
       setItems(mapped);
     } catch (e) {
@@ -539,7 +629,11 @@ export default function Inventario() {
     custoUnitario:           row.custo_unitario != null ? row.custo_unitario : row.custoUnitario,
     caracteristicasTecnicas: row.caracteristicas_tecnicas || row.caracteristicasTecnicas || {},
     desenhoPdf:              row.desenho_pdf || row.desenhoPdf || null,
-    status:                  mapEnumToUiStatus(row.status)
+    status:                  mapEnumToUiStatus(row.status),
+    quantidadeAlmoxarifado:  row.quantidade_almoxarifado ?? row.quantidadeAlmoxarifado ?? 0,
+    quantidadeMaquina:       row.quantidade_maquina      ?? row.quantidadeMaquina      ?? 0,
+    quantidadeReparo:        row.quantidade_reparo       ?? row.quantidadeReparo       ?? 0,
+    quantidadeTotal:         row.quantidade_total        ?? row.quantidadeTotal        ?? 0,
   });
 
   const handleSalvar = async (dados) => {
@@ -576,6 +670,19 @@ export default function Inventario() {
       await carregar();
     } catch (e) {
       alert(`Erro ao excluir: ${e.message}`);
+    }
+  };
+
+  const handleAjustarLocalizacao = async (id, deltaAlmox, deltaMaquina) => {
+    try {
+      const updated = await matrizesApi.ajustarLocalizacao(id, deltaAlmox, deltaMaquina);
+      await carregar();
+      // Atualiza o item no modal de detalhe se estiver aberto para a mesma matriz
+      if (modalDetalhe && modalDetalhe.id === id) {
+        setModalDetalhe(toCamel({ ...modalDetalhe, ...updated }));
+      }
+    } catch (e) {
+      alert(`Erro ao ajustar localização: ${e.message}`);
     }
   };
 
@@ -666,7 +773,10 @@ export default function Inventario() {
                   <th>Material</th>
                   <th>Status</th>
                   <th>Localização</th>
-                  <th style={{ textAlign: 'right' }}>Estoque</th>
+                  <th style={{ textAlign: 'center' }}>Qtd. Total</th>
+                  <th style={{ textAlign: 'center' }}>Almox.</th>
+                  <th style={{ textAlign: 'center' }}>Máquina</th>
+                  <th style={{ textAlign: 'center' }}>Reparo</th>
                   <th style={{ textAlign: 'right' }}>Custo Unit.</th>
                   <th>Ações</th>
                 </tr>
@@ -684,11 +794,20 @@ export default function Inventario() {
                     <td style={{ fontSize: 12, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.localizacao_atual || '—'}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span style={{ fontWeight: 700, color: item.quantidade_estoque < item.estoque_minimo ? '#f87171' : 'var(--color-text-primary)' }}>
-                        {item.quantidade_estoque}
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{ fontWeight: 700, color: item.quantidade_total < item.estoque_minimo ? '#f87171' : 'var(--color-text-primary)' }}>
+                        {item.quantidade_total}
                       </span>
                       <span style={{ color: 'var(--color-text-muted)', fontSize: 11 }}>/{item.estoque_minimo}</span>
+                    </td>
+                    <td style={{ textAlign: 'center', fontSize: 12, color: '#00667A', fontWeight: 600 }}>
+                      {item.quantidade_almoxarifado}
+                    </td>
+                    <td style={{ textAlign: 'center', fontSize: 12, color: '#0F7D46', fontWeight: 600 }}>
+                      {item.quantidade_maquina}
+                    </td>
+                    <td style={{ textAlign: 'center', fontSize: 12, color: '#D97706', fontWeight: 600 }}>
+                      {item.quantidade_reparo}
                     </td>
                     <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>
                       {formatMoeda(item.custo_unitario)}
@@ -734,6 +853,7 @@ export default function Inventario() {
           item={modalDetalhe}
           onClose={() => setModalDetalhe(null)}
           onEdit={(item) => setModalEdicao(item)}
+          onAdjustLocation={handleAjustarLocalizacao}
         />
       )}
     </>

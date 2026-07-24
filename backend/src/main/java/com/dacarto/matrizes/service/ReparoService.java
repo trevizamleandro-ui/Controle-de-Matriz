@@ -68,6 +68,7 @@ public class ReparoService {
     @Transactional
     public Reparo atualizar(UUID id, Reparo dados) {
         Reparo existente = buscarPorId(id);
+        Reparo.ReparoStatus statusAntigo = existente.getStatusReparo();
 
         if (dados.getMatrizElemento() != null && !existente.getMatrizElemento().getId().equals(dados.getMatrizElemento().getId())) {
             MatrizElemento novaMatriz = matrizElementoService.buscarPorId(dados.getMatrizElemento().getId());
@@ -91,8 +92,8 @@ public class ReparoService {
         existente.setNumeroNfRetorno(dados.getNumeroNfRetorno());
 
         // Se finalizou (aprovado, reprovado ou retornado), move de Reparo de volta para Almoxarifado
-        boolean eraEmReparo = existente.getStatusReparo() == Reparo.ReparoStatus.ENVIADO
-                || existente.getStatusReparo() == Reparo.ReparoStatus.EM_REPARO;
+        boolean eraEmReparo = statusAntigo == Reparo.ReparoStatus.ENVIADO
+                || statusAntigo == Reparo.ReparoStatus.EM_REPARO;
         boolean foiConcluido = dados.getStatusReparo() == Reparo.ReparoStatus.APROVADO_POS_REPARO
                 || dados.getStatusReparo() == Reparo.ReparoStatus.REPROVADO_POS_REPARO
                 || dados.getStatusReparo() == Reparo.ReparoStatus.RETORNADO;
@@ -107,7 +108,7 @@ public class ReparoService {
         }
 
         if (dados.getStatusReparo() == Reparo.ReparoStatus.APROVADO_POS_REPARO) {
-            matriz.setStatus(MatrizElemento.ItemStatus.EM_USO);
+            matriz.setStatus(MatrizElemento.ItemStatus.EM_ESTOQUE);
         }
 
         Reparo atualizado = repository.save(existente);

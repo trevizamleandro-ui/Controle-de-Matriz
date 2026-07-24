@@ -522,6 +522,7 @@ function ModalDetalhe({ item, onClose, onEdit, onAdjustLocation }) {
 // ---- PÁGINA PRINCIPAL ----
 export default function Inventario() {
   const [items, setItems]               = useState([]);
+  const [todosItens, setTodosItens]     = useState([]);  // cache sem filtro
   const [busca, setBusca]               = useState('');
   const [buscaInput, setBuscaInput]     = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -561,16 +562,12 @@ export default function Inventario() {
     return map[status] || status || 'Em Estoque';
   };
 
-  // Carregar dados da API Backend
+  // Carregar TODOS os dados da API (sem paginação, sem filtro) — filtragem feita no cliente
   const carregar = useCallback(async () => {
     setLoading(true);
     setErro('');
     try {
-      const apiStatus = mapUiStatusToEnum(filtroStatus);
-      const response = await matrizesApi.listar({ busca, status: apiStatus, tipo: filtroTipo, size: 2000 });
-      const rawList = response?.content || response?.data || response || [];
-      
-      // Mapear para manter compatibilidade com snake_case esperado no JSX da tabela
+      const rawList = await matrizesApi.listarTodosItens() || [];
       const mapped = rawList.map(item => ({
         ...item,
         tag_identificacao: item.tagIdentificacao || item.tag_identificacao,
@@ -581,26 +578,39 @@ export default function Inventario() {
         caracteristicas_tecnicas: item.caracteristicasTecnicas || item.caracteristicas_tecnicas || {},
         desenho_pdf: item.desenhoPdf || item.desenho_pdf || null,
         status: mapEnumToUiStatus(item.status),
-        // Campos de localização física
         quantidade_almoxarifado: item.quantidadeAlmoxarifado ?? item.quantidade_almoxarifado ?? 0,
         quantidade_maquina:      item.quantidadeMaquina      ?? item.quantidade_maquina      ?? 0,
         quantidade_reparo:       item.quantidadeReparo       ?? item.quantidade_reparo       ?? 0,
-        quantidade_total:        item.quantidadeTotal        ?? (
-          (item.quantidadeAlmoxarifado ?? 0) +
-          (item.quantidadeMaquina      ?? 0) +
-          (item.quantidadeReparo       ?? 0)
-        ) || item.quantidadeEstoque || 0,
+        quantidade_total:        item.quantidadeTotal        ??
+          ((item.quantidadeAlmoxarifado ?? 0) + (item.quantidadeMaquina ?? 0) + (item.quantidadeReparo ?? 0))
+          || item.quantidadeEstoque || 0,
       }));
-      setItems(mapped);
+      setTodosItens(mapped);    // guarda o cache completo
     } catch (e) {
       console.error(e);
       setErro('Erro ao carregar dados da API.');
     } finally {
       setLoading(false);
     }
-  }, [busca, filtroStatus, filtroTipo]);
+  }, []); // sem deps de filtro — recarrega apenas na montagem e após salvar/excluir
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Filtragem no cliente — reage a qualquer mudança de filtro sem nova chamada à API
+  useEffect(() => {
+    const term = busca.toLowerCase().trim();
+    const filtered = todosItens.filter(item => {
+      const matchBusca = !term ||
+        (item.tag_identificacao || '').toLowerCase().includes(term) ||
+        (item.nome || '').toLowerCase().includes(term) ||
+        (item.modelo || '').toLowerCase().includes(term) ||
+        (item.material || '').toLowerCase().includes(term);
+      const matchStatus = !filtroStatus || item.status === filtroStatus;
+      const matchTipo   = !filtroTipo   || item.tipo   === filtroTipo;
+      return matchBusca && matchStatus && matchTipo;
+    });
+    setItems(filtered);
+  }, [todosItens, busca, filtroStatus, filtroTipo]);
 
   // Adaptar nomes de campo: form usa camelCase → Supabase usa snake_case (mantido para compatibilidade com o modal)
   const toSnake = (form) => ({
@@ -612,6 +622,8 @@ export default function Inventario() {
     custo_unitario:           form.custoUnitario ? parseFloat(form.custoUnitario) : null,
     estoque_minimo:           parseInt(form.estoqueMinimo) || 1,
     quantidade_estoque:       parseInt(form.quantidadeEstoque) || 0,
+    quantidade_almoxarifado:  parseInt(form.quantidadeAlmoxarifado) || 0,
+    quantidade_maquina:       parseInt(form.quantidadeMaquina) || 0,
     status:                   form.status,
     localizacao_atual:        form.localizacaoAtual || null,
     observacoes:              form.observacoes || null,

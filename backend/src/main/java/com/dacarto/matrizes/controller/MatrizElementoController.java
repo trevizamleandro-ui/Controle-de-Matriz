@@ -42,6 +42,11 @@ public class MatrizElementoController {
         return ResponseEntity.ok(service.listarTodos());
     }
 
+    @GetMapping("/todos-itens")
+    public ResponseEntity<List<MatrizElemento>> listarTodosItens() {
+        return ResponseEntity.ok(service.listarTudoSemFiltro());
+    }
+
     @PatchMapping("/{id}/localizacao")
     public ResponseEntity<MatrizElemento> ajustarLocalizacao(
             @PathVariable UUID id,

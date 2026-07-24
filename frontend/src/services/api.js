@@ -72,6 +72,9 @@ export const matrizesApi = {
 
   listarTodos: () => request('/matrizes/todos'),
 
+  // Todos os itens sem paginação nem filtro (para o Inventário com filtro no cliente)
+  listarTodosItens: () => request('/matrizes/todos-itens'),
+
   ajustarLocalizacao: (id, deltaAlmoxarifado, deltaMaquina) =>
     request(`/matrizes/${id}/localizacao?deltaAlmoxarifado=${deltaAlmoxarifado}&deltaMaquina=${deltaMaquina}`, { method: 'PATCH' }),
 

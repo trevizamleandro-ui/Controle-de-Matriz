@@ -51,6 +51,11 @@ public class MatrizElementoService {
         return repository.findAllAtivos();
     }
 
+    // Retorna TODOS os itens sem paginação nem filtro (para o Inventário com filtro no cliente)
+    public List<MatrizElemento> listarTudoSemFiltro() {
+        return repository.findAll(Sort.by(Sort.Direction.ASC, "nome"));
+    }
+
     @Transactional
     public MatrizElemento ajustarLocalizacao(UUID id, int deltaAlmoxarifado, int deltaMaquina) {
         MatrizElemento m = buscarPorId(id);

@@ -53,7 +53,7 @@ public class MatrizElementoService {
 
     // Retorna TODOS os itens sem paginação nem filtro (para o Inventário com filtro no cliente)
     public List<MatrizElemento> listarTudoSemFiltro() {
-        return repository.findAll(Sort.by(Sort.Direction.ASC, "nome"));
+        return repository.findAll(Sort.by(Sort.Direction.ASC, "tagIdentificacao"));
     }
 
     @Transactional

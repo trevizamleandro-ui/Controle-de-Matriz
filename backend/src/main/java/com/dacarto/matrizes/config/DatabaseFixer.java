@@ -52,6 +52,9 @@ public class DatabaseFixer implements CommandLineRunner {
             addColumnIfNotExistsWithDefault("quantidade_maquina", "integer", "0");
             addColumnIfNotExistsWithDefault("quantidade_reparo", "integer", "0");
 
+            // Correção pontual para MTZ-001 que ficou presa em reparo
+            jdbcTemplate.execute("UPDATE matrizes_elementos SET quantidade_almoxarifado = quantidade_almoxarifado + quantidade_reparo, quantidade_reparo = 0 WHERE tag_identificacao = 'MTZ-001' AND quantidade_reparo > 0");
+
             log.info("Database fixer completed successfully.");
         } catch (Exception e) {
             log.error("Failed to run database fixer: ", e);

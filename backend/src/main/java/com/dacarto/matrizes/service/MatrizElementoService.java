@@ -86,6 +86,7 @@ public class MatrizElementoService {
         if (repository.existsByTagIdentificacao(item.getTagIdentificacao())) {
             throw new IllegalArgumentException("Tag já cadastrada: " + item.getTagIdentificacao());
         }
+        item.sincronizarEstoque();
         MatrizElemento salvo = repository.save(item);
         log.info("Matriz/Elemento criado: {} [{}]", salvo.getTagIdentificacao(), salvo.getId());
         return salvo;
@@ -109,7 +110,15 @@ public class MatrizElementoService {
         existente.setCaracteristicasTecnicas(dados.getCaracteristicasTecnicas());
         existente.setCustoUnitario(dados.getCustoUnitario());
         existente.setEstoqueMinimo(dados.getEstoqueMinimo());
-        existente.setQuantidadeEstoque(dados.getQuantidadeEstoque());
+        
+        if (dados.getQuantidadeAlmoxarifado() != null) {
+            existente.setQuantidadeAlmoxarifado(dados.getQuantidadeAlmoxarifado());
+        }
+        if (dados.getQuantidadeMaquina() != null) {
+            existente.setQuantidadeMaquina(dados.getQuantidadeMaquina());
+        }
+        existente.sincronizarEstoque();
+        
         existente.setStatus(dados.getStatus());
         existente.setLocalizacaoAtual(dados.getLocalizacaoAtual());
         existente.setObservacoes(dados.getObservacoes());

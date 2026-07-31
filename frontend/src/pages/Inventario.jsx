@@ -34,9 +34,10 @@ function gerarRelatorio(items, filtroStatus, filtroTipo, busca) {
         <td style="font-family:monospace;font-weight:700;color:#1e293b">${item.tag_identificacao || '—'}</td>
         <td style="font-weight:600;color:#1e293b;max-width:180px">${item.nome || '—'}</td>
         <td><span style="background:${tipoColor[item.tipo] || '#64748b'}22;color:${tipoColor[item.tipo] || '#64748b'};border:1px solid ${tipoColor[item.tipo] || '#64748b'}44;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${item.tipo || '—'}</span></td>
-        <td style="font-size:12px">${item.material || '—'}</td>
         <td><span style="background:${statusColor[item.status] || '#64748b'}22;color:${statusColor[item.status] || '#64748b'};border:1px solid ${statusColor[item.status] || '#64748b'}44;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${item.status || '—'}</span></td>
         <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${item.localizacao_atual || '—'}</td>
+        <td style="text-align:center;font-weight:600;color:#0F7D46">${item.quantidade_maquina ?? 0}</td>
+        <td style="text-align:center;font-weight:600;color:#D97706">${item.quantidade_reparo ?? 0}</td>
         <td style="text-align:center">
           <span style="font-weight:700;color:${alerta ? '#dc2626' : '#1e293b'}">${item.quantidade_estoque ?? 0}</span>
           <span style="color:#94a3b8;font-size:11px">/${item.estoque_minimo ?? 0}</span>
@@ -109,8 +110,11 @@ function gerarRelatorio(items, filtroStatus, filtroTipo, busca) {
   <table>
     <thead>
       <tr>
-        <th>TAG</th><th>Nome</th><th>Tipo</th><th>Material</th>
-        <th>Status</th><th>Localização</th><th style="text-align:center">Estoque</th>
+        <th>TAG</th><th>Nome</th><th>Tipo</th>
+        <th>Status</th><th>Localização</th>
+        <th style="text-align:center">Máquina</th>
+        <th style="text-align:center">Reparo</th>
+        <th style="text-align:center">Estoque</th>
         <th style="text-align:right">Custo Unit.</th>
         <th style="text-align:right">Valor Total</th>
         <th>Modelo</th>
@@ -119,7 +123,7 @@ function gerarRelatorio(items, filtroStatus, filtroTipo, busca) {
     <tbody>
       ${linhas}
       <tr class="total-row">
-        <td colspan="8" style="text-align:right;font-size:12px">VALOR TOTAL DO INVENTÁRIO:</td>
+        <td colspan="9" style="text-align:right;font-size:12px">VALOR TOTAL DO INVENTÁRIO:</td>
         <td style="text-align:right;font-family:monospace;font-size:13px;color:#0f172a">${fmtMoeda(totalValor)}</td>
         <td></td>
       </tr>

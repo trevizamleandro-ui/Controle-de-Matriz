@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,7 +35,7 @@ public interface MatrizElementoRepository extends JpaRepository<MatrizElemento, 
     List<MatrizElemento> findAllAtivos();
 
     // Itens com estoque abaixo do mínimo
-    @Query("SELECT m FROM MatrizElemento m WHERE m.quantidadeEstoque < m.estoqueMinimo AND m.status != 'DESATIVADO'")
+    @Query("SELECT m FROM MatrizElemento m WHERE m.quantidadeEstoque < m.estoqueMinimo AND m.status != com.dacarto.matrizes.model.MatrizElemento.ItemStatus.DESATIVADO")
     List<MatrizElemento> findAbaixoEstoqueMinimo();
 
     // Busca textual por tag, nome ou modelo
@@ -46,26 +47,27 @@ public interface MatrizElementoRepository extends JpaRepository<MatrizElemento, 
         """)
     Page<MatrizElemento> buscarPorTermo(@Param("termo") String termo, Pageable pageable);
 
-    // ---- KPIs consolidados ----
-    // UMA única query retorna contagens agrupadas por (status, tipo)
-    // Retorna Object[] com [status (String), tipo (String), count (Long)]
-    @Query("""
-        SELECT CAST(m.status AS string), CAST(m.tipo AS string), COUNT(m)
-        FROM MatrizElemento m
-        GROUP BY m.status, m.tipo
-        """)
+    // ---- KPIs consolidados — queries nativas SQL para máxima compatibilidade ----
+
+    // Retorna: [status_name (String), tipo_name (String), count (Long)]
+    // Usa SQL nativo para evitar problemas com CAST de enum no Hibernate 6 + PostgreSQL
+    @Query(value = """
+        SELECT status, tipo, COUNT(*) as cnt
+        FROM matrizes_elementos
+        GROUP BY status, tipo
+        """, nativeQuery = true)
     List<Object[]> contarPorStatusETipo();
 
-    // Soma de estoque total/por tipo — UMA query com CASE ao invés de N queries
-    @Query("""
+    // Somas de estoque por tipo — uma única query SQL nativa com CASE
+    @Query(value = """
         SELECT
-            COALESCE(SUM(CASE WHEN m.tipo = com.dacarto.matrizes.model.MatrizElemento.ItemTipo.Matriz   THEN m.quantidadeEstoque ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN m.tipo = com.dacarto.matrizes.model.MatrizElemento.ItemTipo.Elemento THEN m.quantidadeEstoque ELSE 0 END), 0),
-            COALESCE(SUM(m.quantidadeEstoque), 0)
-        FROM MatrizElemento m
-        """)
+            COALESCE(SUM(CASE WHEN tipo = 'Matriz'   THEN quantidade_estoque ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN tipo = 'Elemento' THEN quantidade_estoque ELSE 0 END), 0),
+            COALESCE(SUM(quantidade_estoque), 0)
+        FROM matrizes_elementos
+        """, nativeQuery = true)
     Object[] sumEstoquePorTipo();
 
-    @Query("SELECT COALESCE(SUM(m.custoUnitario * m.quantidadeEstoque), 0) FROM MatrizElemento m WHERE m.status != 'DESATIVADO'")
-    java.math.BigDecimal calcularValorTotalInventario();
+    @Query(value = "SELECT COALESCE(SUM(custo_unitario * quantidade_estoque), 0) FROM matrizes_elementos WHERE status != 'DESATIVADO'", nativeQuery = true)
+    BigDecimal calcularValorTotalInventario();
 }

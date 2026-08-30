@@ -173,7 +173,8 @@ public class MatrizElementoService {
         List<Object[]> contagens = repository.contarPorStatusETipo();
 
         // 2) Somas de estoque (total, matrizes, elementos) — uma única query CASE
-        Object[] somas = repository.sumEstoquePorTipo();
+        List<Object[]> somasList = repository.sumEstoquePorTipo();
+        Object[] somas = (somasList != null && !somasList.isEmpty()) ? somasList.get(0) : new Object[]{0, 0, 0};
         long totalMatrizes  = toLong(somas[0]);
         long totalElementos = toLong(somas[1]);
         long totalItens     = toLong(somas[2]);

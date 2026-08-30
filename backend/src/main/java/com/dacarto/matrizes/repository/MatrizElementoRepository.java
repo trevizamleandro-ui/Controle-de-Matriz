@@ -66,7 +66,7 @@ public interface MatrizElementoRepository extends JpaRepository<MatrizElemento, 
             COALESCE(SUM(quantidade_estoque), 0)
         FROM matrizes_elementos
         """, nativeQuery = true)
-    Object[] sumEstoquePorTipo();
+    List<Object[]> sumEstoquePorTipo();
 
     @Query(value = "SELECT COALESCE(SUM(custo_unitario * quantidade_estoque), 0) FROM matrizes_elementos WHERE status != 'DESATIVADO'", nativeQuery = true)
     BigDecimal calcularValorTotalInventario();

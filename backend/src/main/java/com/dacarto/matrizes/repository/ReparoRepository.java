@@ -32,6 +32,7 @@ public interface ReparoRepository extends JpaRepository<Reparo, UUID> {
 
     long countByStatusReparo(Reparo.ReparoStatus status);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"matrizElemento", "fornecedor"})
     @Query("SELECT r FROM Reparo r WHERE " +
            "(:busca IS NULL OR :busca = '' OR LOWER(r.descricaoProblema) LIKE LOWER(CONCAT('%', :busca, '%')) OR LOWER(r.matrizElemento.tagIdentificacao) LIKE LOWER(CONCAT('%', :busca, '%'))) " +
            "AND (:fornecedorId IS NULL OR r.fornecedor.id = :fornecedorId)")

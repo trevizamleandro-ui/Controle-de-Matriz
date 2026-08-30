@@ -9,8 +9,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.criteria.Predicate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import java.util.UUID;
 
@@ -25,7 +30,29 @@ public class InspecaoService {
 
     public Page<Inspecao> listar(String busca, Inspecao.InspecaoTipo tipo, Inspecao.InspecaoResultado resultado, int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
-        return repository.buscarComFiltros(busca, tipo, resultado, pageable);
+        
+        Specification<Inspecao> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            if (busca != null && !busca.isBlank()) {
+                String termo = "%" + busca.trim().toLowerCase() + "%";
+                Predicate porInspetor = cb.like(cb.lower(root.get("inspetor")), termo);
+                Predicate porTag = cb.like(cb.lower(root.get("matrizElemento").get("tagIdentificacao")), termo);
+                predicates.add(cb.or(porInspetor, porTag));
+            }
+            
+            if (tipo != null) {
+                predicates.add(cb.equal(root.get("tipoInspecao"), tipo));
+            }
+            
+            if (resultado != null) {
+                predicates.add(cb.equal(root.get("resultado"), resultado));
+            }
+            
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        return repository.findAll(spec, pageable);
     }
 
     public Inspecao buscarPorId(UUID id) {

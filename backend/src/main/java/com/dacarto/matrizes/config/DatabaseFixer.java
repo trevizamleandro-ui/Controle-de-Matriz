@@ -25,19 +25,35 @@ public class DatabaseFixer implements CommandLineRunner {
                 log.warn("Could not log user roles: {}", ex.getMessage());
             }
 
-            jdbcTemplate.execute("UPDATE usuarios SET role = 'ADMIN' WHERE role = 'Admin' OR role = 'admin'");
-            jdbcTemplate.execute("UPDATE usuarios SET role = 'MANUTENCAO' WHERE role = 'Manutencao' OR role = 'manutencao' OR role = 'MANUTENÇÃO' OR role = 'Manutenção' OR role = 'manutenção'");
+            try {
+                jdbcTemplate.execute("UPDATE usuarios SET role = 'ADMIN' WHERE role = 'Admin' OR role = 'admin' OR role = 'Administrador'");
+            } catch (Exception e) { log.warn("Failed to update ADMIN roles: {}", e.getMessage()); }
+
+            try {
+                jdbcTemplate.execute("UPDATE usuarios SET role = 'MANUTENCAO' WHERE role = 'Manutencao' OR role = 'manutencao' OR role = 'MANUTENÇÃO' OR role = 'Manutenção' OR role = 'manutenção'");
+            } catch (Exception e) { log.warn("Failed to update MANUTENCAO roles: {}", e.getMessage()); }
+
+            try {
+                jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'EM_USO' WHERE status = 'Em Uso' OR status = 'em uso'");
+            } catch (Exception e) { log.warn("Failed to update EM_USO status: {}", e.getMessage()); }
+
+            try {
+                jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'EM_ESTOQUE' WHERE status = 'Em Estoque' OR status = 'em estoque'");
+            } catch (Exception e) { log.warn("Failed to update EM_ESTOQUE status: {}", e.getMessage()); }
+
+            try {
+                jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'EM_REPARO' WHERE status = 'Em Reparo' OR status = 'em reparo'");
+            } catch (Exception e) { log.warn("Failed to update EM_REPARO status: {}", e.getMessage()); }
+
+            try {
+                jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'DESATIVADO' WHERE status = 'Desativado' OR status = 'desativado'");
+            } catch (Exception e) { log.warn("Failed to update DESATIVADO status: {}", e.getMessage()); }
 
             jdbcTemplate.execute("UPDATE reparos SET status_reparo = 'RETORNADO' WHERE status_reparo = 'Retornado'");
             jdbcTemplate.execute("UPDATE reparos SET status_reparo = 'EM_REPARO' WHERE status_reparo = 'Em Reparo'");
             jdbcTemplate.execute("UPDATE reparos SET status_reparo = 'APROVADO_POS_REPARO' WHERE status_reparo = 'Aprovado Pós-Reparo'");
             jdbcTemplate.execute("UPDATE reparos SET status_reparo = 'REPROVADO_POS_REPARO' WHERE status_reparo = 'Reprovado Pós-Reparo'");
             jdbcTemplate.execute("UPDATE reparos SET status_reparo = 'ENVIADO' WHERE status_reparo = 'Enviado'");
-            
-            jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'EM_ESTOQUE' WHERE status = 'Em Estoque'");
-            jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'EM_USO' WHERE status = 'Em Uso'");
-            jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'EM_REPARO' WHERE status = 'Em Reparo'");
-            jdbcTemplate.execute("UPDATE matrizes_elementos SET status = 'DESATIVADO' WHERE status = 'Desativado'");
 
             // Add columns to matrizes_elementos if they don't exist
             addColumnIfNotExists("altura_original", "double precision");

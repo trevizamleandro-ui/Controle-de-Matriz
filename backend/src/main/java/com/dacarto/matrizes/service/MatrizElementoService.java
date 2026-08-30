@@ -168,34 +168,85 @@ public class MatrizElementoService {
     // ---- KPIs / DASHBOARD ----
 
     public Map<String, Object> calcularKpis() {
+        // 3 queries ao invés de 14 —————————————————————————————————————————
+        // 1) Contagens por (status × tipo) — uma única query GROUP BY
+        List<Object[]> contagens = repository.contarPorStatusETipo();
+
+        // 2) Somas de estoque (total, matrizes, elementos) — uma única query CASE
+        Object[] somas = repository.sumEstoquePorTipo();
+        long totalMatrizes  = toLong(somas[0]);
+        long totalElementos = toLong(somas[1]);
+        long totalItens     = toLong(somas[2]);
+
+        // 3) Valor financeiro do inventário
+        java.math.BigDecimal valorTotal = repository.calcularValorTotalInventario();
+
+        // Itens abaixo do estoque mínimo (query separada pois retorna entidades)
         List<MatrizElemento> abaixo = repository.findAbaixoEstoqueMinimo();
+
+        return buildKpiMap(contagens, totalMatrizes, totalElementos, totalItens, valorTotal, abaixo.size());
+    }
+
+    /** Processa o resultado do GROUP BY em memória para montar o Map de KPIs */
+    private Map<String, Object> buildKpiMap(
+            List<Object[]> contagens,
+            long totalMatrizes, long totalElementos, long totalItens,
+            java.math.BigDecimal valorTotal, int abaixoMinimo) {
+
+        // Inicializa contadores
+        long emUso = 0, emUsoM = 0, emUsoE = 0;
+        long emEst = 0, emEstM = 0, emEstE = 0;
+        long emRep = 0, emRepM = 0, emRepE = 0;
+        long desativ = 0, desativM = 0, desativE = 0;
+
+        for (Object[] row : contagens) {
+            String status = String.valueOf(row[0]);
+            String tipo   = String.valueOf(row[1]);
+            long   cnt    = toLong(row[2]);
+            boolean isM   = "Matriz".equals(tipo);
+
+            switch (status) {
+                case "EM_USO"     -> { emUso += cnt; if (isM) emUsoM += cnt; else emUsoE += cnt; }
+                case "EM_ESTOQUE" -> { emEst += cnt; if (isM) emEstM += cnt; else emEstE += cnt; }
+                case "EM_REPARO"  -> { emRep += cnt; if (isM) emRepM += cnt; else emRepE += cnt; }
+                case "DESATIVADO" -> { desativ += cnt; if (isM) desativM += cnt; else desativE += cnt; }
+            }
+        }
+
         return Map.ofEntries(
-            Map.entry("totalItens", repository.sumEstoqueTotal()),
-            Map.entry("totalMatrizes", repository.sumEstoqueByTipo(MatrizElemento.ItemTipo.Matriz)),
-            Map.entry("totalElementos", repository.sumEstoqueByTipo(MatrizElemento.ItemTipo.Elemento)),
-            
-            Map.entry("emUso", repository.countByStatus(MatrizElemento.ItemStatus.EM_USO)),
-            Map.entry("emUsoMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_USO, MatrizElemento.ItemTipo.Matriz)),
-            Map.entry("emUsoElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_USO, MatrizElemento.ItemTipo.Elemento)),
-            
-            Map.entry("emEstoque", repository.countByStatus(MatrizElemento.ItemStatus.EM_ESTOQUE)),
-            Map.entry("emEstoqueMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_ESTOQUE, MatrizElemento.ItemTipo.Matriz)),
-            Map.entry("emEstoqueElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_ESTOQUE, MatrizElemento.ItemTipo.Elemento)),
-            
-            Map.entry("emReparo", repository.countByStatus(MatrizElemento.ItemStatus.EM_REPARO)),
-            Map.entry("emReparoMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_REPARO, MatrizElemento.ItemTipo.Matriz)),
-            Map.entry("emReparoElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.EM_REPARO, MatrizElemento.ItemTipo.Elemento)),
-            
-            Map.entry("desativados", repository.countByStatus(MatrizElemento.ItemStatus.DESATIVADO)),
-            Map.entry("desativadosMatrizes", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.DESATIVADO, MatrizElemento.ItemTipo.Matriz)),
-            Map.entry("desativadosElementos", repository.countByStatusAndTipo(MatrizElemento.ItemStatus.DESATIVADO, MatrizElemento.ItemTipo.Elemento)),
-            
-            Map.entry("abaixoEstoqueMinimo", abaixo.size()),
-            Map.entry("valorTotalInventario", repository.calcularValorTotalInventario())
+            Map.entry("totalItens",    totalItens),
+            Map.entry("totalMatrizes", totalMatrizes),
+            Map.entry("totalElementos", totalElementos),
+
+            Map.entry("emUso",          emUso),
+            Map.entry("emUsoMatrizes",  emUsoM),
+            Map.entry("emUsoElementos", emUsoE),
+
+            Map.entry("emEstoque",          emEst),
+            Map.entry("emEstoqueMatrizes",  emEstM),
+            Map.entry("emEstoqueElementos", emEstE),
+
+            Map.entry("emReparo",          emRep),
+            Map.entry("emReparoMatrizes",  emRepM),
+            Map.entry("emReparoElementos", emRepE),
+
+            Map.entry("desativados",         desativ),
+            Map.entry("desativadosMatrizes", desativM),
+            Map.entry("desativadosElementos",desativE),
+
+            Map.entry("abaixoEstoqueMinimo",   abaixoMinimo),
+            Map.entry("valorTotalInventario",  valorTotal)
         );
+    }
+
+    private static long toLong(Object val) {
+        if (val == null) return 0L;
+        if (val instanceof Number n) return n.longValue();
+        return Long.parseLong(val.toString());
     }
 
     public List<MatrizElemento> listarAbaixoEstoqueMinimo() {
         return repository.findAbaixoEstoqueMinimo();
     }
 }
+

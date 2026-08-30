@@ -46,16 +46,25 @@ public interface MatrizElementoRepository extends JpaRepository<MatrizElemento, 
         """)
     Page<MatrizElemento> buscarPorTermo(@Param("termo") String termo, Pageable pageable);
 
-    // KPIs do dashboard
-    long countByStatus(MatrizElemento.ItemStatus status);
-    long countByTipo(MatrizElemento.ItemTipo tipo);
-    long countByStatusAndTipo(MatrizElemento.ItemStatus status, MatrizElemento.ItemTipo tipo);
+    // ---- KPIs consolidados ----
+    // UMA única query retorna contagens agrupadas por (status, tipo)
+    // Retorna Object[] com [status (String), tipo (String), count (Long)]
+    @Query("""
+        SELECT CAST(m.status AS string), CAST(m.tipo AS string), COUNT(m)
+        FROM MatrizElemento m
+        GROUP BY m.status, m.tipo
+        """)
+    List<Object[]> contarPorStatusETipo();
 
-    @Query("SELECT COALESCE(SUM(m.quantidadeEstoque), 0) FROM MatrizElemento m WHERE m.tipo = :tipo")
-    Long sumEstoqueByTipo(@Param("tipo") MatrizElemento.ItemTipo tipo);
-
-    @Query("SELECT COALESCE(SUM(m.quantidadeEstoque), 0) FROM MatrizElemento m")
-    Long sumEstoqueTotal();
+    // Soma de estoque total/por tipo — UMA query com CASE ao invés de N queries
+    @Query("""
+        SELECT
+            COALESCE(SUM(CASE WHEN m.tipo = com.dacarto.matrizes.model.MatrizElemento.ItemTipo.Matriz   THEN m.quantidadeEstoque ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN m.tipo = com.dacarto.matrizes.model.MatrizElemento.ItemTipo.Elemento THEN m.quantidadeEstoque ELSE 0 END), 0),
+            COALESCE(SUM(m.quantidadeEstoque), 0)
+        FROM MatrizElemento m
+        """)
+    Object[] sumEstoquePorTipo();
 
     @Query("SELECT COALESCE(SUM(m.custoUnitario * m.quantidadeEstoque), 0) FROM MatrizElemento m WHERE m.status != 'DESATIVADO'")
     java.math.BigDecimal calcularValorTotalInventario();

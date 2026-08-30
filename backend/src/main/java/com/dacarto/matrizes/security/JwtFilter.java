@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,13 +19,11 @@ import java.io.IOException;
 import java.util.Collections;
 
 @Component
+@Slf4j
+@RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
-
-    public JwtFilter(JwtTokenProvider tokenProvider) {
-        this.tokenProvider = tokenProvider;
-    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -31,30 +31,21 @@ public class JwtFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
-            System.out.println("[JWT Filter] Path: " + request.getRequestURI() + " | Token: " + (jwt != null ? "Found" : "Null"));
 
-            if (StringUtils.hasText(jwt)) {
-                boolean isValid = tokenProvider.validateToken(jwt);
-                System.out.println("[JWT Filter] Token is valid: " + isValid);
-                
-                if (isValid) {
-                    String username = tokenProvider.getUsernameFromJWT(jwt);
-                    String role = tokenProvider.getRoleFromJWT(jwt);
-                    System.out.println("[JWT Filter] User: " + username + " | Role: " + role);
+            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                String username = tokenProvider.getUsernameFromJWT(jwt);
+                String role     = tokenProvider.getRoleFromJWT(jwt);
 
-                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            username, null, Collections.singletonList(authority));
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(username, null, Collections.singletonList(authority));
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    System.out.println("[JWT Filter] Authentication set successfully.");
-                }
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("[JWT] Autenticado: {} | role: {}", username, role);
             }
         } catch (Exception ex) {
-            System.err.println("[JWT Filter] Error setting authentication: " + ex.getMessage());
-            ex.printStackTrace();
-            logger.error("Não foi possível definir a autenticação do usuário no contexto de segurança", ex);
+            log.error("[JWT] Erro ao autenticar requisição: {}", ex.getMessage());
         }
 
         filterChain.doFilter(request, response);

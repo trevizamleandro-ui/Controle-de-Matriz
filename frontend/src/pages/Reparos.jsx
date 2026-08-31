@@ -234,12 +234,10 @@ function ModalRetorno({ reparo, onSave, onClose }) {
   );
 }
 
+import { useQuery } from '@tanstack/react-query';
+
 // ---- COMPONENTE PRINCIPAL ----
 export default function Reparos() {
-  const [reparos, setReparos]           = useState([]);
-  const [matrizes, setMatrizes]         = useState([]);
-  const [fornecedores, setFornecedores] = useState([]);
-  
   const [viewMode, setViewMode]         = useState('kanban'); // 'tabela' ou 'kanban'
   const [busca, setBusca]               = useState('');
   const [buscaInput, setBuscaInput]     = useState('');
@@ -248,35 +246,27 @@ export default function Reparos() {
   const [modalEnvio, setModalEnvio]     = useState(false);
   const [modalEdicao, setModalEdicao]   = useState(null);
   const [modalRetorno, setModalRetorno] = useState(null);
-  
-  const [loading, setLoading]           = useState(true);
 
-  const carregar = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await reparosApi.listar({ busca, fornecedorId: filtroFornecedor });
-      setReparos(response?.content || response?.data || response || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [busca, filtroFornecedor]);
+  const { data: rawReparos, isLoading: loadingReparos, refetch: carregar } = useQuery({
+    queryKey: ['reparos', busca, filtroFornecedor],
+    queryFn: () => reparosApi.listar({ busca, fornecedorId: filtroFornecedor }),
+  });
 
-  const carregarMatrizesEFornecedores = useCallback(async () => {
-    try {
-      const resMats = await matrizesApi.listarTodos();
-      setMatrizes(resMats?.content || resMats?.data || resMats || []);
+  const { data: rawMatrizes, isLoading: loadingMatrizes } = useQuery({
+    queryKey: ['matrizes-todas-reparos'],
+    queryFn: () => matrizesApi.listarTodos(),
+  });
 
-      const resForns = await fornecedoresApi.listar();
-      setFornecedores(resForns?.content || resForns?.data || resForns || []);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
+  const { data: rawFornecedores, isLoading: loadingFornecedores } = useQuery({
+    queryKey: ['fornecedores-todos-reparos'],
+    queryFn: () => fornecedoresApi.listar(),
+  });
 
-  useEffect(() => { carregar(); }, [carregar]);
-  useEffect(() => { carregarMatrizesEFornecedores(); }, [carregarMatrizesEFornecedores]);
+  const loading = loadingReparos || loadingMatrizes || loadingFornecedores;
+
+  const reparos = rawReparos?.content || rawReparos?.data || rawReparos || [];
+  const matrizes = rawMatrizes?.content || rawMatrizes?.data || rawMatrizes || [];
+  const fornecedores = rawFornecedores?.content || rawFornecedores?.data || rawFornecedores || [];
 
   // Debounce para buscaInput -> busca
   useEffect(() => {

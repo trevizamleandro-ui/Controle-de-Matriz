@@ -1,31 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fornecedoresApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Fornecedores() {
   const { user } = useAuth();
-  const [fornecedores, setFornecedores] = useState([]);
   const [busca, setBusca] = useState('');
   const [form, setForm] = useState(null); // null = não está editando nem criando
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  const carregar = async () => {
-    setLoading(true);
-    try {
-      const data = await fornecedoresApi.listar();
-      setFornecedores(data);
-    } catch (err) {
-      console.error(err);
-      setError('Erro ao carregar fornecedores da base de dados.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: fornecedores = [], isLoading: loading, isError, refetch: carregar } = useQuery({
+    queryKey: ['fornecedores'],
+    queryFn: () => fornecedoresApi.listar(),
+  });
 
-  useEffect(() => {
-    carregar();
-  }, []);
+  const error = isError ? 'Erro ao carregar fornecedores da base de dados.' : errorMsg;
+  const setError = setErrorMsg;
 
   const handleSalvar = async (e) => {
     e.preventDefault();

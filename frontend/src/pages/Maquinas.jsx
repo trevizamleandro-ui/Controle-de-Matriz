@@ -1,31 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { maquinasApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Maquinas() {
   const { user } = useAuth();
-  const [maquinas, setMaquinas] = useState([]);
   const [busca, setBusca] = useState('');
   const [form, setForm] = useState(null); // null = não editando nem criando
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  const carregar = async () => {
-    setLoading(true);
-    try {
-      const data = await maquinasApi.listar();
-      setMaquinas(data);
-    } catch (err) {
-      console.error(err);
-      setError('Erro ao carregar máquinas da base de dados.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: rawMaquinas, isLoading: loading, isError, refetch: carregar } = useQuery({
+    queryKey: ['maquinas'],
+    queryFn: () => maquinasApi.listar(),
+  });
 
-  useEffect(() => {
-    carregar();
-  }, []);
+  const maquinas = rawMaquinas?.content || rawMaquinas || [];
+  const error = isError ? 'Erro ao carregar máquinas da base de dados.' : errorMsg;
+  const setError = setErrorMsg;
 
   const handleSalvar = async (e) => {
     e.preventDefault();

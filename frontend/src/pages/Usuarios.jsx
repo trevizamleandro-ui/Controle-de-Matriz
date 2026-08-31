@@ -1,31 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { usuariosApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Usuarios() {
   const { user } = useAuth();
-  const [usuarios, setUsuarios] = useState([]);
   const [form, setForm] = useState(null); // null = não está editando nem criando
-  const [loading, setLoading] = useState(true);
 
-  const carregar = async () => {
-    setLoading(true);
-    try {
-      const data = await usuariosApi.listar();
-      setUsuarios(data);
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao carregar usuários');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: rawUsuarios, isLoading: loading, isError, refetch: carregar } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => usuariosApi.listar(),
+    enabled: user?.role === 'ADMIN',
+  });
 
-  useEffect(() => {
-    if (user?.role === 'ADMIN') {
-      carregar();
-    }
-  }, [user]);
+  const usuarios = rawUsuarios?.content || rawUsuarios || [];
+  
+  if (isError) {
+    alert('Erro ao carregar usuários');
+  }
 
   if (user?.role !== 'ADMIN') {
     return (

@@ -95,13 +95,9 @@ function statusBadge(s) {
   return <span className={`badge ${map[s] || ''}`}>{s}</span>;
 }
 
-export default function Dashboard() {
-  const [kpis, setKpis]       = useState(MOCK_KPIS);
-  const [alertas, setAlertas] = useState([]);
-  const [recentes, setRecentes] = useState([]);
-  const [statusChart, setStatusChart] = useState(MOCK_STATUS_CHART);
-  const [loading, setLoading] = useState(true);
+import { useQuery } from '@tanstack/react-query';
 
+export default function Dashboard() {
   const mapEnumToUiStatus = (status) => {
     if (status && typeof status === 'object' && status.label) return status.label;
     const map = {
@@ -113,56 +109,47 @@ export default function Dashboard() {
     return map[status] || status || 'Em Estoque';
   };
 
-  useEffect(() => {
-    async function carregar() {
-      setLoading(true);
-      try {
-        // Dispara as 3 requisições em PARALELO — reduz latência de ~600ms para ~200ms
-        const [kpisReais, alertasEstoque, recResponse] = await Promise.all([
-          matrizesApi.dashboard(),
-          matrizesApi.alertasEstoque(),
-          matrizesApi.listar({ size: 5 }),
-        ]);
+  const { data: kpisReais, isLoading: loadingKpis } = useQuery({
+    queryKey: ['dashboard-kpis'],
+    queryFn: () => matrizesApi.dashboard(),
+  });
 
-        if (kpisReais) {
-          setKpis(kpisReais);
-          setStatusChart([
-            { label: 'Em Estoque', valor: kpisReais.emEstoque || 0, cor: '#3b82f6' },
-            { label: 'Em Uso',     valor: kpisReais.emUso || 0,     cor: '#10b981' },
-            { label: 'Em Reparo',  valor: kpisReais.emReparo || 0,  cor: '#f59e0b' },
-            { label: 'Desativado', valor: kpisReais.desativados || 0, cor: '#6b7280' },
-          ]);
-          
-          // Alertas gerados automaticamente a partir do estoque mínimo
-          const alertasGerados = (alertasEstoque || []).map((item, i) => ({
-            id: i + 1,
-            tipo: 'Estoque Mínimo',
-            prioridade: 'Alta',
-            mensagem: `${item.tagIdentificacao || item.tag_identificacao}: estoque ${item.quantidadeEstoque != null ? item.quantidadeEstoque : item.quantidade_estoque} / mínimo ${item.estoqueMinimo != null ? item.estoqueMinimo : item.estoque_minimo} — ${item.nome}`,
-          }));
-          setAlertas(alertasGerados);
-        }
+  const { data: alertasEstoqueRaw, isLoading: loadingAlertas } = useQuery({
+    queryKey: ['alertas-estoque'],
+    queryFn: () => matrizesApi.alertasEstoque(),
+  });
 
-        // Itens recentes
-        const rec = recResponse?.content || recResponse?.data || recResponse || [];
-        
-        // Mapear para snake_case esperado no JSX do Dashboard
-        const mappedRec = rec.map(item => ({
-          ...item,
-          tag_identificacao: item.tagIdentificacao || item.tag_identificacao,
-          localizacao_atual: item.localizacaoAtual || item.localizacao_atual,
-          status: mapEnumToUiStatus(item.status)
-        }));
-        
-        setRecentes(mappedRec.slice(0, 5));
-      } catch (err) {
-        console.error('[Dashboard] Erro ao carregar dados:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    carregar();
-  }, []);
+  const { data: recResponse, isLoading: loadingRecentes } = useQuery({
+    queryKey: ['matrizes-recentes'],
+    queryFn: () => matrizesApi.listar({ size: 5 }),
+  });
+
+  const loading = loadingKpis || loadingAlertas || loadingRecentes;
+
+  // Computando os estados derivados dos dados do cache
+  const kpis = kpisReais || MOCK_KPIS;
+  
+  const statusChart = kpisReais ? [
+    { label: 'Em Estoque', valor: kpisReais.emEstoque || 0, cor: '#3b82f6' },
+    { label: 'Em Uso',     valor: kpisReais.emUso || 0,     cor: '#10b981' },
+    { label: 'Em Reparo',  valor: kpisReais.emReparo || 0,  cor: '#f59e0b' },
+    { label: 'Desativado', valor: kpisReais.desativados || 0, cor: '#6b7280' },
+  ] : MOCK_STATUS_CHART;
+
+  const alertas = (alertasEstoqueRaw || []).map((item, i) => ({
+    id: i + 1,
+    tipo: 'Estoque Mínimo',
+    prioridade: 'Alta',
+    mensagem: `${item.tagIdentificacao || item.tag_identificacao}: estoque ${item.quantidadeEstoque != null ? item.quantidadeEstoque : item.quantidade_estoque} / mínimo ${item.estoqueMinimo != null ? item.estoqueMinimo : item.estoque_minimo} — ${item.nome}`,
+  }));
+
+  const recData = recResponse?.content || recResponse?.data || recResponse || [];
+  const recentes = recData.slice(0, 5).map(item => ({
+    ...item,
+    tag_identificacao: item.tagIdentificacao || item.tag_identificacao,
+    localizacao_atual: item.localizacaoAtual || item.localizacao_atual,
+    status: mapEnumToUiStatus(item.status)
+  }));
 
 
   const formatMoeda = (v) =>

@@ -524,9 +524,11 @@ function ModalDetalhe({ item, onClose, onEdit, onAdjustLocation }) {
 }
 
 // ---- PÁGINA PRINCIPAL ----
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+
 export default function Inventario() {
   const [items, setItems]               = useState([]);
-  const [todosItens, setTodosItens]     = useState([]);  // cache sem filtro
   const [busca, setBusca]               = useState('');
   const [buscaInput, setBuscaInput]     = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -534,8 +536,6 @@ export default function Inventario() {
   const [modalCadastro, setModalCadastro] = useState(false);
   const [modalEdicao, setModalEdicao]     = useState(null);
   const [modalDetalhe, setModalDetalhe]   = useState(null);
-  const [loading, setLoading]           = useState(true);
-  const [erro, setErro]                 = useState('');
 
   // Debounce para buscaInput -> busca
   useEffect(() => {
@@ -566,39 +566,33 @@ export default function Inventario() {
     return map[status] || status || 'Em Estoque';
   };
 
-  // Carregar TODOS os dados da API (sem paginação, sem filtro) — filtragem feita no cliente
-  const carregar = useCallback(async () => {
-    setLoading(true);
-    setErro('');
-    try {
-      const rawList = await matrizesApi.listarTodosItens() || [];
-      const mapped = rawList.map(item => ({
-        ...item,
-        tag_identificacao: item.tagIdentificacao || item.tag_identificacao,
-        localizacao_atual: item.localizacaoAtual || item.localizacao_atual,
-        quantidade_estoque: item.quantidadeEstoque != null ? item.quantidadeEstoque : item.quantidade_estoque,
-        estoque_minimo: item.estoqueMinimo != null ? item.estoqueMinimo : item.estoque_minimo,
-        custo_unitario: item.custoUnitario != null ? item.custoUnitario : item.custo_unitario,
-        caracteristicas_tecnicas: item.caracteristicasTecnicas || item.caracteristicas_tecnicas || {},
-        desenho_pdf: item.desenhoPdf || item.desenho_pdf || null,
-        status: mapEnumToUiStatus(item.status),
-        quantidade_almoxarifado: item.quantidadeAlmoxarifado ?? item.quantidade_almoxarifado ?? 0,
-        quantidade_maquina:      item.quantidadeMaquina      ?? item.quantidade_maquina      ?? 0,
-        quantidade_reparo:       item.quantidadeReparo       ?? item.quantidade_reparo       ?? 0,
-        quantidade_total:        item.quantidadeTotal        ??
-          ((item.quantidadeAlmoxarifado ?? 0) + (item.quantidadeMaquina ?? 0) + (item.quantidadeReparo ?? 0))
-          || item.quantidadeEstoque || 0,
-      }));
-      setTodosItens(mapped);    // guarda o cache completo
-    } catch (e) {
-      console.error(e);
-      setErro('Erro ao carregar dados da API.');
-    } finally {
-      setLoading(false);
-    }
-  }, []); // sem deps de filtro — recarrega apenas na montagem e após salvar/excluir
+  const { data: rawList, isLoading: loading, isError, refetch: carregar } = useQuery({
+    queryKey: ['inventario-todos'],
+    queryFn: () => matrizesApi.listarTodosItens(),
+  });
 
-  useEffect(() => { carregar(); }, [carregar]);
+  const erro = isError ? 'Erro ao carregar dados da API.' : '';
+
+  const todosItens = useMemo(() => {
+    if (!rawList) return [];
+    return rawList.map(item => ({
+      ...item,
+      tag_identificacao: item.tagIdentificacao || item.tag_identificacao,
+      localizacao_atual: item.localizacaoAtual || item.localizacao_atual,
+      quantidade_estoque: item.quantidadeEstoque != null ? item.quantidadeEstoque : item.quantidade_estoque,
+      estoque_minimo: item.estoqueMinimo != null ? item.estoqueMinimo : item.estoque_minimo,
+      custo_unitario: item.custoUnitario != null ? item.custoUnitario : item.custo_unitario,
+      caracteristicas_tecnicas: item.caracteristicasTecnicas || item.caracteristicas_tecnicas || {},
+      desenho_pdf: item.desenhoPdf || item.desenho_pdf || null,
+      status: mapEnumToUiStatus(item.status),
+      quantidade_almoxarifado: item.quantidadeAlmoxarifado ?? item.quantidade_almoxarifado ?? 0,
+      quantidade_maquina:      item.quantidadeMaquina      ?? item.quantidade_maquina      ?? 0,
+      quantidade_reparo:       item.quantidadeReparo       ?? item.quantidade_reparo       ?? 0,
+      quantidade_total:        item.quantidadeTotal        ??
+        ((item.quantidadeAlmoxarifado ?? 0) + (item.quantidadeMaquina ?? 0) + (item.quantidadeReparo ?? 0))
+        || item.quantidadeEstoque || 0,
+    }));
+  }, [rawList]);
 
   // Filtragem no cliente — reage a qualquer mudança de filtro sem nova chamada à API
   useEffect(() => {

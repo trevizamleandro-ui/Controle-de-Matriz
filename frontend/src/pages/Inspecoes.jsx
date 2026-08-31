@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { inspecoesApi, matrizesApi } from '../services/api';
 
 // ---- HELPERS ----
@@ -692,8 +693,6 @@ function ModalConfigChecklist({ matrizes, onSave, onClose }) {
 
 // ---- PÁGINA PRINCIPAL ----
 export default function Inspecoes() {
-  const [inspecoes, setInspecoes]       = useState([]);
-  const [matrizes, setMatrizes]         = useState([]);
   const [busca, setBusca]               = useState('');
   const [buscaInput, setBuscaInput]     = useState('');
   const [filtroTipo, setFiltroTipo]     = useState('');
@@ -704,39 +703,26 @@ export default function Inspecoes() {
   const [modalDetalhe, setModalDetalhe]   = useState(null);
   const [modalChecklist, setModalChecklist] = useState(false);
   
-  const [loading, setLoading]           = useState(true);
-  const [erro, setErro]                 = useState('');
+  const [erroMsg, setErroMsg]             = useState('');
 
-  // Carregar inspecoes
-  const carregar = useCallback(async () => {
-    setLoading(true);
-    setErro('');
-    try {
-      let tipoEnum = filtroTipo === 'Periódica' ? 'Periodica' : filtroTipo === 'Pós-Reparo' ? 'PosReparo' : filtroTipo;
-      let resultadoEnum = filtroResultado === 'Requer Reparo' ? 'RequereReparo' : filtroResultado;
+  const tipoEnum = filtroTipo === 'Periódica' ? 'Periodica' : filtroTipo === 'Pós-Reparo' ? 'PosReparo' : filtroTipo;
+  const resultadoEnum = filtroResultado === 'Requer Reparo' ? 'RequereReparo' : filtroResultado;
 
-      const response = await inspecoesApi.listar({ busca, tipo: tipoEnum, resultado: resultadoEnum });
-      setInspecoes(response?.content || []);
-    } catch (e) {
-      console.error(e);
-      setErro('Erro ao carregar dados da API.');
-    } finally {
-      setLoading(false);
-    }
-  }, [busca, filtroTipo, filtroResultado]);
+  const { data: rawInspecoes, isLoading: loading, isError: isErrorInspecao, refetch: carregar } = useQuery({
+    queryKey: ['inspecoes', busca, tipoEnum, resultadoEnum],
+    queryFn: () => inspecoesApi.listar({ busca, tipo: tipoEnum, resultado: resultadoEnum }),
+  });
 
-  // Carregar matrizes separadamente (apenas uma vez no mount)
-  const carregarMatrizes = useCallback(async () => {
-    try {
-      const matsResponse = await matrizesApi.listarTodos();
-      setMatrizes(matsResponse?.content || matsResponse?.data || matsResponse || []);
-    } catch (e) {
-      console.error('Erro ao carregar matrizes:', e);
-    }
-  }, []);
+  const { data: rawMatrizes, refetch: carregarMatrizes } = useQuery({
+    queryKey: ['matrizes-todas-inspecoes'],
+    queryFn: () => matrizesApi.listarTodos(),
+  });
 
-  useEffect(() => { carregar(); }, [carregar]);
-  useEffect(() => { carregarMatrizes(); }, [carregarMatrizes]);
+  const inspecoes = rawInspecoes?.content || rawInspecoes || [];
+  const matrizes = rawMatrizes?.content || rawMatrizes?.data || rawMatrizes || [];
+  
+  const erro = isErrorInspecao ? 'Erro ao carregar dados da API.' : erroMsg;
+  const setErro = setErroMsg;
 
   // Debounce para buscaInput -> busca
   useEffect(() => {

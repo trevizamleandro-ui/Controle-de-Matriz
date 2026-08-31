@@ -36,7 +36,6 @@ function Sidebar({ alertasCount = 0 }) {
     <aside className="sidebar">
       <div className="sidebar-logo">
         <h1>DACARTO MATRIZES</h1>
-        <span>Controller v18</span>
       </div>
 
       <nav className="sidebar-nav">

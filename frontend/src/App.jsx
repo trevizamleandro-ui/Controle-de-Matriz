@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { authApi } from './services/api';
 import './index.css';
 import Dashboard from './pages/Dashboard';
 import Inventario from './pages/Inventario';
@@ -115,6 +117,14 @@ function ProtectedRoute({ children, allowedRoles }) {
 function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Ping a API a cada 5 minutos (300000ms) para evitar que o Render hiberne (Cold Start delay)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      authApi.ping();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Get active tab config
   const tabConfigs = {

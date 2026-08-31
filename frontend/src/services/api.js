@@ -161,7 +161,11 @@ export const sapApi = {
 // ---- USUARIOS E AUTH ----
 
 export const authApi = {
-  login: (username, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  login: (username, password) => request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password })
+  }),
+  ping: () => request('/auth/login', { method: 'OPTIONS' }).catch(() => {}) // Lightweight ping to keep Render awake
 };
 
 export const usuariosApi = {

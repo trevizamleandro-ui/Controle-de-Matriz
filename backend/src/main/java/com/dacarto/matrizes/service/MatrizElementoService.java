@@ -1,6 +1,8 @@
 package com.dacarto.matrizes.service;
 
+import com.dacarto.matrizes.dto.RelatorioItemDTO;
 import com.dacarto.matrizes.model.MatrizElemento;
+import com.dacarto.matrizes.model.Reparo;
 import com.dacarto.matrizes.repository.MatrizElementoRepository;
 import com.dacarto.matrizes.repository.InspecaoRepository;
 import com.dacarto.matrizes.repository.ReparoRepository;
@@ -14,6 +16,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +52,43 @@ public class MatrizElementoService {
 
     public List<MatrizElemento> listarTodos() {
         return repository.findAllAtivos();
+    }
+
+    public List<RelatorioItemDTO> gerarRelatorioDetalhado() {
+        List<MatrizElemento> matrizes = repository.findAll(Sort.by(Sort.Direction.ASC, "tagIdentificacao"));
+        List<Reparo> reparos = reparoRepository.findAllWithFornecedor();
+
+        Map<UUID, List<Reparo>> reparosPorMatriz = reparos.stream()
+                .filter(r -> r.getMatrizElemento() != null)
+                .collect(Collectors.groupingBy(r -> r.getMatrizElemento().getId()));
+
+        return matrizes.stream().map(m -> {
+            List<Reparo> reparosItem = reparosPorMatriz.getOrDefault(m.getId(), List.of());
+
+            BigDecimal custoTotal = reparosItem.stream()
+                    .map(Reparo::getCustoReparo)
+                    .filter(java.util.Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            Reparo ultimoReparoEmAndamento = reparosItem.stream()
+                    .filter(r -> r.getStatusReparo() == Reparo.ReparoStatus.ENVIADO || r.getStatusReparo() == Reparo.ReparoStatus.EM_REPARO)
+                    .max(java.util.Comparator.comparing(Reparo::getDataEnvio))
+                    .orElse(null);
+
+            boolean isEmReparo = m.getStatus() == MatrizElemento.ItemStatus.EM_REPARO || (m.getQuantidadeReparo() != null && m.getQuantidadeReparo() > 0);
+
+            return RelatorioItemDTO.builder()
+                    .id(m.getId())
+                    .tagIdentificacao(m.getTagIdentificacao())
+                    .nome(m.getNome())
+                    .tipo(m.getTipo() != null ? m.getTipo().name() : "")
+                    .maquinaAtual(m.getLocalizacaoAtual())
+                    .quantidadeEstoque(m.getQuantidadeEstoque() != null ? m.getQuantidadeEstoque() : 0)
+                    .emReparo(isEmReparo)
+                    .fornecedorReparo(ultimoReparoEmAndamento != null && ultimoReparoEmAndamento.getFornecedor() != null ? ultimoReparoEmAndamento.getFornecedor().getNome() : null)
+                    .custoTotalReparos(custoTotal)
+                    .build();
+        }).collect(Collectors.toList());
     }
 
     // Retorna TODOS os itens sem paginação nem filtro (para o Inventário com filtro no cliente)

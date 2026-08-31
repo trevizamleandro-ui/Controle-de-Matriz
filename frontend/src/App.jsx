@@ -8,6 +8,7 @@ import Maquinas from './pages/Maquinas';
 import Fornecedores from './pages/Fornecedores';
 import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
+import Relatorios from './pages/Relatorios';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function Sidebar({ alertasCount = 0 }) {
@@ -146,9 +147,12 @@ function Layout() {
           <div className="editor-tab active">
             <span>{activeTab.icon}</span> {activeTab.label}
           </div>
-          <div className="editor-tab" style={{ opacity: 0.5, cursor: 'default' }}>
-            <span>➕</span> Novo Bloco...
-          </div>
+          <NavLink 
+            to="/relatorios" 
+            className={({ isActive }) => `editor-tab ${isActive ? 'active' : ''}`}
+          >
+            📊 Relatórios
+          </NavLink>
         </div>
 
         {/* Content Container */}
@@ -159,6 +163,7 @@ function Layout() {
             <Route path="/inventario"   element={<ProtectedRoute><Inventario /></ProtectedRoute>} />
             <Route path="/inspecoes"    element={<ProtectedRoute><Inspecoes /></ProtectedRoute>} />
             <Route path="/reparos"      element={<ProtectedRoute><Reparos /></ProtectedRoute>} />
+            <Route path="/relatorios"   element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
             <Route path="/maquinas"     element={<ProtectedRoute allowedRoles={['ADMIN']}><Maquinas /></ProtectedRoute>} />
             <Route path="/fornecedores" element={<ProtectedRoute allowedRoles={['ADMIN']}><Fornecedores /></ProtectedRoute>} />
             <Route path="/usuarios"     element={<ProtectedRoute allowedRoles={['ADMIN']}><Usuarios /></ProtectedRoute>} />

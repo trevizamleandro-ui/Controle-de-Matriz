@@ -1,5 +1,6 @@
 package com.dacarto.matrizes.controller;
 
+import com.dacarto.matrizes.dto.RelatorioItemDTO;
 import com.dacarto.matrizes.model.MatrizElemento;
 import com.dacarto.matrizes.service.MatrizElementoService;
 import jakarta.validation.Valid;
@@ -45,6 +46,11 @@ public class MatrizElementoController {
     @GetMapping("/todos-itens")
     public ResponseEntity<List<MatrizElemento>> listarTodosItens() {
         return ResponseEntity.ok(service.listarTudoSemFiltro());
+    }
+
+    @GetMapping("/relatorio")
+    public ResponseEntity<List<RelatorioItemDTO>> relatorioDetalhado() {
+        return ResponseEntity.ok(service.gerarRelatorioDetalhado());
     }
 
     @PatchMapping("/{id}/localizacao")

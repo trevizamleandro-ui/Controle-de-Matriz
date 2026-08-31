@@ -18,6 +18,9 @@ public interface ReparoRepository extends JpaRepository<Reparo, UUID> {
 
     List<Reparo> findByStatusReparo(Reparo.ReparoStatus status);
 
+    @Query("SELECT r FROM Reparo r LEFT JOIN FETCH r.fornecedor")
+    List<Reparo> findAllWithFornecedor();
+
     // Reparos atrasados: data retorno prevista no passado e ainda não retornaram
     @Query("""
         SELECT r FROM Reparo r

@@ -527,6 +527,8 @@ export const matrizesSupabase = {
 
     let totalMatrizes = 0;
     let totalElementos = 0;
+    let totalCadastrosMatrizes = 0;
+    let totalCadastrosElementos = 0;
     let emUso = 0, emUsoMatrizes = 0, emUsoElementos = 0;
     let emEstoque = 0, emEstoqueMatrizes = 0, emEstoqueElementos = 0;
     let emReparo = 0, emReparoMatrizes = 0, emReparoElementos = 0;
@@ -535,12 +537,21 @@ export const matrizesSupabase = {
 
     for (const item of todos) {
       const isMatriz = (item.tipo || '').toLowerCase() === 'matriz';
+      const q = Number(item.quantidade_estoque) || 0;
       const s = (item.status || '').toUpperCase().trim();
 
       const isEmUso = s === 'EM_USO' || s === 'EM USO';
       const isEmEstoque = s === 'EM_ESTOQUE' || s === 'EM ESTOQUE';
       const isEmReparo = s === 'EM_REPARO' || s === 'EM REPARO';
       const isDesativado = s === 'DESATIVADO';
+
+      if (isMatriz) {
+        totalMatrizes += q;
+        if (!isDesativado) totalCadastrosMatrizes++;
+      } else {
+        totalElementos += q;
+        if (!isDesativado) totalCadastrosElementos++;
+      }
 
       if (isEmUso) {
         emUso++;
@@ -557,8 +568,7 @@ export const matrizesSupabase = {
       }
 
       if (!isDesativado) {
-        if (isMatriz) totalMatrizes++; else totalElementos++;
-        valorTotal += (Number(item.custo_unitario) || 0) * (Number(item.quantidade_estoque) || 0);
+        valorTotal += (Number(item.custo_unitario) || 0) * q;
       }
     }
 
@@ -566,9 +576,11 @@ export const matrizesSupabase = {
     const abaixoMinimoItens = naoDesativados.filter(item => (Number(item.quantidade_estoque) || 0) <= (Number(item.estoque_minimo) || 1));
 
     return {
-      totalItens: todos.length,
+      totalItens: totalMatrizes + totalElementos,
       totalMatrizes,
       totalElementos,
+      totalCadastrosMatrizes,
+      totalCadastrosElementos,
       emUso,
       emUsoMatrizes,
       emUsoElementos,

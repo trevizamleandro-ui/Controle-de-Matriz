@@ -149,6 +149,8 @@ export interface DashboardKPIs {
   totalItens: number;
   totalMatrizes: number;
   totalElementos: number;
+  totalCadastrosMatrizes?: number;
+  totalCadastrosElementos?: number;
   emUso: number;
   emUsoMatrizes: number;
   emUsoElementos: number;

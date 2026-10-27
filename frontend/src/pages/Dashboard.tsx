@@ -7,6 +7,8 @@ const MOCK_KPIS = {
   totalItens: 0,
   totalMatrizes: 0,
   totalElementos: 0,
+  totalCadastrosMatrizes: 0,
+  totalCadastrosElementos: 0,
   emUso: 0,
   emUsoMatrizes: 0,
   emUsoElementos: 0,
@@ -20,6 +22,7 @@ const MOCK_KPIS = {
   desativadosMatrizes: 0,
   desativadosElementos: 0,
   abaixoEstoqueMinimo: 0,
+  abaixoEstoqueMinimoItens: [],
   valorTotalInventario: 0,
 };
 
@@ -35,13 +38,15 @@ function KpiCard({
   value,
   label,
   colorClass,
-  suffix = ''
+  suffix = '',
+  detail
 }: {
   icon: string;
   value: number | string;
   label: string;
   colorClass: string;
   suffix?: string;
+  detail?: string;
 }) {
   return (
     <div className="glass-card kpi-card">
@@ -49,6 +54,7 @@ function KpiCard({
       <div>
         <div className="kpi-value">{typeof value === 'number' ? value.toLocaleString('pt-BR') : value}{suffix}</div>
         <div className="kpi-label">{label}</div>
+        {detail && <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{detail}</div>}
       </div>
     </div>
   );
@@ -160,8 +166,20 @@ export default function Dashboard() {
 
       {/* KPI Grid */}
       <div className="kpi-grid">
-        <KpiCard icon="🔩" value={kpis.totalMatrizes || 0} label="Total de Matrizes" colorClass="blue" />
-        <KpiCard icon="⚙️" value={kpis.totalElementos || 0} label="Total de Elementos" colorClass="cyan" />
+        <KpiCard
+          icon="🔩"
+          value={kpis.totalMatrizes || 0}
+          label="Total de Matrizes"
+          colorClass="blue"
+          detail={kpis.totalCadastrosMatrizes ? `${kpis.totalCadastrosMatrizes} modelos cadastrados` : undefined}
+        />
+        <KpiCard
+          icon="⚙️"
+          value={kpis.totalElementos || 0}
+          label="Total de Elementos"
+          colorClass="cyan"
+          detail={kpis.totalCadastrosElementos ? `${kpis.totalCadastrosElementos} itens cadastrados` : undefined}
+        />
         <KpiCard icon="✅" value={kpis.emUso || 0} label="Em Uso" colorClass="green" />
         <KpiCard icon="📦" value={kpis.emEstoque || 0} label="Em Estoque" colorClass="blue" />
         <KpiCard icon="🔧" value={kpis.emReparo || 0} label="Em Reparo" colorClass="orange" />

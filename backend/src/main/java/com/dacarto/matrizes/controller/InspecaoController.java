@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/inspecoes")
@@ -33,6 +34,11 @@ public class InspecaoController {
     @GetMapping("/{id}")
     public ResponseEntity<Inspecao> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(service.buscarPorId(id));
+    }
+
+    @GetMapping("/matriz/{matrizId}")
+    public ResponseEntity<List<Inspecao>> buscarPorMatriz(@PathVariable UUID matrizId) {
+        return ResponseEntity.ok(service.buscarPorMatriz(matrizId));
     }
 
     @PostMapping

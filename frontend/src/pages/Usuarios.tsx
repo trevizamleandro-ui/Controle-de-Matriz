@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usuariosApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import type { Usuario } from '../types/database';
+
+interface UsuarioForm {
+  id?: string;
+  username: string;
+  password?: string;
+  nome: string;
+  role: string;
+}
 
 export default function Usuarios() {
   const { user } = useAuth();
-  const [form, setForm] = useState(null); // null = não está editando nem criando
+  const [form, setForm] = useState<UsuarioForm | null>(null);
 
   const { data: rawUsuarios, isLoading: loading, isError, refetch: carregar } = useQuery({
     queryKey: ['usuarios'],
@@ -13,8 +22,8 @@ export default function Usuarios() {
     enabled: user?.role === 'ADMIN',
   });
 
-  const usuarios = rawUsuarios?.content || rawUsuarios || [];
-  
+  const usuarios: Usuario[] = (rawUsuarios as any)?.content || (rawUsuarios as any) || [];
+
   if (isError) {
     alert('Erro ao carregar usuários');
   }
@@ -28,8 +37,9 @@ export default function Usuarios() {
     );
   }
 
-  const handleSalvar = async (e) => {
+  const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form) return;
     try {
       if (form.id) {
         await usuariosApi.atualizar(form.id, form);
@@ -38,12 +48,12 @@ export default function Usuarios() {
       }
       setForm(null);
       carregar();
-    } catch (err) {
+    } catch (err: any) {
       alert(err.message || 'Erro ao salvar');
     }
   };
 
-  const handleExcluir = async (id) => {
+  const handleExcluir = async (id: string) => {
     if (confirm('Excluir este usuário?')) {
       try {
         await usuariosApi.excluir(id);
@@ -92,7 +102,7 @@ export default function Usuarios() {
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setForm({ ...u, password: '' })}>✏️</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleExcluir(u.id)} disabled={u.username === user.username}>🗑</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleExcluir(u.id)} disabled={u.username === user?.username}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -121,7 +131,7 @@ export default function Usuarios() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">{form.id ? 'Nova Senha (deixe em branco para não alterar)' : 'Senha'}</label>
-                  <input type="password" className="form-input" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required={!form.id} />
+                  <input type="password" className="form-input" value={form.password || ''} onChange={e => setForm({ ...form, password: e.target.value })} required={!form.id} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Perfil de Acesso</label>

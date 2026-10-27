@@ -1,0 +1,11 @@
+[
+  {
+    "id": "c506efe5-bcd5-40ec-a264-d12c910ada9d",
+    "nome_maquina": "Ex-01",
+    "localizacao": "Galpão 1",
+    "descricao": "teste",
+    "ativa": true,
+    "created_at": "2026-06-24T13:01:44.677573+00:00",
+    "updated_at": "2026-06-24T13:01:44.677588+00:00"
+  }
+]

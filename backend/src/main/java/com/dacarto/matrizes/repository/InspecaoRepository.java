@@ -18,4 +18,7 @@ public interface InspecaoRepository extends JpaRepository<Inspecao, UUID>, JpaSp
     Page<Inspecao> findAll(@Nullable Specification<Inspecao> spec, Pageable pageable);
 
     void deleteAllByMatrizElementoId(UUID matrizElementoId);
+
+    @EntityGraph(attributePaths = {"matrizElemento"})
+    java.util.List<Inspecao> findByMatrizElementoIdOrderByDataInspecaoDesc(UUID matrizElementoId);
 }

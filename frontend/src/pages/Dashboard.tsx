@@ -1,33 +1,48 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { matrizesApi } from '../services/api';
+import type { MatrizElemento } from '../types/database';
 
-// Dados mock usados como fallback enquanto Supabase carrega
 const MOCK_KPIS = {
   totalItens: 0,
+  totalMatrizes: 0,
+  totalElementos: 0,
   emUso: 0,
+  emUsoMatrizes: 0,
+  emUsoElementos: 0,
   emEstoque: 0,
+  emEstoqueMatrizes: 0,
+  emEstoqueElementos: 0,
   emReparo: 0,
+  emReparoMatrizes: 0,
+  emReparoElementos: 0,
   desativados: 0,
+  desativadosMatrizes: 0,
+  desativadosElementos: 0,
   abaixoEstoqueMinimo: 0,
   valorTotalInventario: 0,
 };
 
 const MOCK_STATUS_CHART = [
   { label: 'Em Estoque', valor: 0, cor: '#3b82f6' },
-  { label: 'Em Uso',     valor: 0, cor: '#10b981' },
-  { label: 'Em Reparo',  valor: 0, cor: '#f59e0b' },
+  { label: 'Em Uso', valor: 0, cor: '#10b981' },
+  { label: 'Em Reparo', valor: 0, cor: '#f59e0b' },
   { label: 'Desativado', valor: 0, cor: '#6b7280' },
 ];
 
-const MOCK_RECENT = [
-  { tag: 'MX-001', nome: 'Matriz Perfil T-40', tipo: 'Matriz', status: 'Em Uso',     maquina: 'Extrusora 01' },
-  { tag: 'EX-047', nome: 'Elemento Rosca 120mm', tipo: 'Elemento', status: 'Em Estoque', maquina: '—' },
-  { tag: 'MX-012', nome: 'Matriz Canal 25x12', tipo: 'Matriz', status: 'Em Reparo',  maquina: '—' },
-  { tag: 'EX-031', nome: 'Elemento Bi-Metalico',  tipo: 'Elemento', status: 'Em Uso',     maquina: 'Extrusora 02' },
-  { tag: 'MX-007', nome: 'Matriz Tubo Ø60',      tipo: 'Matriz', status: 'Em Estoque', maquina: '—' },
-];
-
-function KpiCard({ icon, value, label, colorClass, suffix = '' }) {
+function KpiCard({
+  icon,
+  value,
+  label,
+  colorClass,
+  suffix = ''
+}: {
+  icon: string;
+  value: number | string;
+  label: string;
+  colorClass: string;
+  suffix?: string;
+}) {
   return (
     <div className="glass-card kpi-card">
       <div className={`kpi-icon ${colorClass}`}>{icon}</div>
@@ -39,7 +54,7 @@ function KpiCard({ icon, value, label, colorClass, suffix = '' }) {
   );
 }
 
-function MiniDonut({ data }) {
+function MiniDonut({ data }: { data: Array<{ label: string; valor: number; cor: string }> }) {
   const total = data.reduce((s, d) => s + d.valor, 0);
   let offset = 0;
   const r = 40;
@@ -49,34 +64,31 @@ function MiniDonut({ data }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
       <svg width="110" height="110" viewBox="0 0 110 110">
         {data.map((d, i) => {
-          const pct   = d.valor / total;
-          const dash  = pct * circ;
-          const gap   = circ - dash;
-          const rot   = (offset / total) * 360 - 90;
-          offset     += d.valor;
+          const pct = total > 0 ? d.valor / total : 0;
+          const dash = pct * circ;
+          const gap = circ - dash;
+          const rot = total > 0 ? (offset / total) * 360 - 90 : -90;
+          offset += d.valor;
           return (
             <circle
               key={i}
               cx="55" cy="55" r={r}
-              fill="none"
+              fill="transparent"
               stroke={d.cor}
               strokeWidth="14"
               strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset="0"
               transform={`rotate(${rot} 55 55)`}
               style={{ transition: 'stroke-dasharray 0.5s ease' }}
             />
           );
         })}
-        <text x="55" y="55" textAnchor="middle" dominantBaseline="middle"
-          fill="var(--color-text-primary)" fontSize="18" fontWeight="800">{total}</text>
-        <text x="55" y="68" textAnchor="middle" dominantBaseline="middle"
-          fill="var(--color-text-secondary)" fontSize="9">itens</text>
       </svg>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {data.map((d, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.cor, flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{d.label}</span>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: d.cor, display: 'inline-block' }} />
+            <span style={{ color: 'var(--color-text-muted)' }}>{d.label}:</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)', marginLeft: 4 }}>{d.valor}</span>
           </div>
         ))}
@@ -85,30 +97,17 @@ function MiniDonut({ data }) {
   );
 }
 
-function statusBadge(s) {
-  const map = {
-    'Em Uso':     'badge-em-uso',
+function statusBadge(s: string) {
+  const map: Record<string, string> = {
+    'Em Uso': 'badge-em-uso',
     'Em Estoque': 'badge-em-estoque',
-    'Em Reparo':  'badge-em-reparo',
+    'Em Reparo': 'badge-em-reparo',
     'Desativado': 'badge-desativado',
   };
   return <span className={`badge ${map[s] || ''}`}>{s}</span>;
 }
 
-import { useQuery } from '@tanstack/react-query';
-
 export default function Dashboard() {
-  const mapEnumToUiStatus = (status) => {
-    if (status && typeof status === 'object' && status.label) return status.label;
-    const map = {
-      'EM_USO': 'Em Uso',
-      'EM_ESTOQUE': 'Em Estoque',
-      'EM_REPARO': 'Em Reparo',
-      'DESATIVADO': 'Desativado'
-    };
-    return map[status] || status || 'Em Estoque';
-  };
-
   const { data: kpisReais, isLoading: loadingKpis } = useQuery({
     queryKey: ['dashboard-kpis'],
     queryFn: () => matrizesApi.dashboard(),
@@ -125,34 +124,26 @@ export default function Dashboard() {
   });
 
   const loading = loadingKpis || loadingAlertas || loadingRecentes;
-
-  // Computando os estados derivados dos dados do cache
   const kpis = kpisReais || MOCK_KPIS;
-  
+
   const statusChart = kpisReais ? [
     { label: 'Em Estoque', valor: kpisReais.emEstoque || 0, cor: '#3b82f6' },
-    { label: 'Em Uso',     valor: kpisReais.emUso || 0,     cor: '#10b981' },
-    { label: 'Em Reparo',  valor: kpisReais.emReparo || 0,  cor: '#f59e0b' },
+    { label: 'Em Uso', valor: kpisReais.emUso || 0, cor: '#10b981' },
+    { label: 'Em Reparo', valor: kpisReais.emReparo || 0, cor: '#f59e0b' },
     { label: 'Desativado', valor: kpisReais.desativados || 0, cor: '#6b7280' },
   ] : MOCK_STATUS_CHART;
 
-  const alertas = (alertasEstoqueRaw || []).map((item, i) => ({
+  const alertas = (alertasEstoqueRaw || []).map((item: any, i: number) => ({
     id: i + 1,
     tipo: 'Estoque Mínimo',
     prioridade: 'Alta',
-    mensagem: `${item.tagIdentificacao || item.tag_identificacao}: estoque ${item.quantidadeEstoque != null ? item.quantidadeEstoque : item.quantidade_estoque} / mínimo ${item.estoqueMinimo != null ? item.estoqueMinimo : item.estoque_minimo} — ${item.nome}`,
+    mensagem: `${item.tag_identificacao || item.tagIdentificacao}: estoque ${item.quantidade_estoque ?? item.quantidadeEstoque} / mínimo ${item.estoque_minimo ?? item.estoqueMinimo} — ${item.nome}`,
   }));
 
-  const recData = recResponse?.content || recResponse?.data || recResponse || [];
-  const recentes = recData.slice(0, 5).map(item => ({
-    ...item,
-    tag_identificacao: item.tagIdentificacao || item.tag_identificacao,
-    localizacao_atual: item.localizacaoAtual || item.localizacao_atual,
-    status: mapEnumToUiStatus(item.status)
-  }));
+  const recData: MatrizElemento[] = (recResponse as any)?.content || (recResponse as any)?.data || (recResponse as any) || [];
+  const recentes = recData.slice(0, 5);
 
-
-  const formatMoeda = (v) =>
+  const formatMoeda = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   return (
@@ -169,13 +160,13 @@ export default function Dashboard() {
 
       {/* KPI Grid */}
       <div className="kpi-grid">
-        <KpiCard icon="🔩" value={kpis.totalMatrizes || 0}   label="Total de Matrizes"    colorClass="blue" />
-        <KpiCard icon="⚙️" value={kpis.totalElementos || 0}  label="Total de Elementos"   colorClass="cyan" />
-        <KpiCard icon="✅" value={kpis.emUso}               label="Em Uso"                colorClass="green" />
-        <KpiCard icon="📦" value={kpis.emEstoque}           label="Em Estoque"            colorClass="blue" />
-        <KpiCard icon="🔧" value={kpis.emReparo}            label="Em Reparo"             colorClass="orange" />
-        <KpiCard icon="⚠️" value={kpis.abaixoEstoqueMinimo} label="Abaixo do Mínimo"      colorClass="red" />
-        <KpiCard icon="💰" value={formatMoeda(kpis.valorTotalInventario)} label="Valor do Inventário" colorClass="purple" />
+        <KpiCard icon="🔩" value={kpis.totalMatrizes || 0} label="Total de Matrizes" colorClass="blue" />
+        <KpiCard icon="⚙️" value={kpis.totalElementos || 0} label="Total de Elementos" colorClass="cyan" />
+        <KpiCard icon="✅" value={kpis.emUso || 0} label="Em Uso" colorClass="green" />
+        <KpiCard icon="📦" value={kpis.emEstoque || 0} label="Em Estoque" colorClass="blue" />
+        <KpiCard icon="🔧" value={kpis.emReparo || 0} label="Em Reparo" colorClass="orange" />
+        <KpiCard icon="⚠️" value={kpis.abaixoEstoqueMinimo || 0} label="Abaixo do Mínimo" colorClass="red" />
+        <KpiCard icon="💰" value={formatMoeda(kpis.valorTotalInventario || 0)} label="Valor do Inventário" colorClass="purple" />
       </div>
 
       <div className="grid-2" style={{ gap: 20, marginBottom: 20 }}>
@@ -272,8 +263,8 @@ export default function Dashboard() {
                     <td>
                       <span className="badge" style={{
                         background: r.tipo === 'Matriz' ? 'rgba(139,92,246,0.15)' : 'rgba(6,182,212,0.15)',
-                        color:      r.tipo === 'Matriz' ? '#a78bfa' : '#22d3ee',
-                        border:     r.tipo === 'Matriz' ? '1px solid rgba(139,92,246,0.25)' : '1px solid rgba(6,182,212,0.25)',
+                        color: r.tipo === 'Matriz' ? '#a78bfa' : '#22d3ee',
+                        border: r.tipo === 'Matriz' ? '1px solid rgba(139,92,246,0.25)' : '1px solid rgba(6,182,212,0.25)',
                       }}>
                         {r.tipo}
                       </span>

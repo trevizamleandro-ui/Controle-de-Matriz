@@ -7,9 +7,9 @@ function formatCurrency(val) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 }
 
-function formatDate(dateStr, includeTime = false) {
+function formatDate(dateStr: string, includeTime = false) {
   if (!dateStr) return '—';
-  const opts = { day: '2-digit', month: '2-digit', year: 'numeric' };
+  const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
   if (includeTime) {
     opts.hour = '2-digit';
     opts.minute = '2-digit';
@@ -49,7 +49,7 @@ const EMPTY_FORM = {
   numeroNfEnvio: '',
 };
 
-function ModalEnvio({ reparo, matrizes, fornecedores, onSave, onClose }) {
+function ModalEnvio({ reparo = null, matrizes, fornecedores, onSave, onClose }: any) {
   const [form, setForm] = useState(() => reparo
     ? { 
         ...reparo,
@@ -264,9 +264,9 @@ export default function Reparos() {
 
   const loading = loadingReparos || loadingMatrizes || loadingFornecedores;
 
-  const reparos = rawReparos?.content || rawReparos?.data || rawReparos || [];
-  const matrizes = rawMatrizes?.content || rawMatrizes?.data || rawMatrizes || [];
-  const fornecedores = rawFornecedores?.content || rawFornecedores?.data || rawFornecedores || [];
+  const reparos: any[] = (rawReparos as any)?.content || (rawReparos as any)?.data || (Array.isArray(rawReparos) ? rawReparos : []);
+  const matrizes: any[] = (rawMatrizes as any)?.content || (rawMatrizes as any)?.data || (Array.isArray(rawMatrizes) ? rawMatrizes : []);
+  const fornecedores: any[] = (rawFornecedores as any)?.content || (rawFornecedores as any)?.data || (Array.isArray(rawFornecedores) ? rawFornecedores : []);
 
   // Debounce para buscaInput -> busca
   useEffect(() => {

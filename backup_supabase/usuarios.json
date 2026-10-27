@@ -1,0 +1,16 @@
+[
+  {
+    "id": "a1a03943-f402-4b7b-9a1c-7d3b7dc9ff1b",
+    "nome": "Administrador do Sistema",
+    "password": "$2a$12$2gUbaAUvvJFZaJtWbhRrm.SND/mKQFmRfLN8B0mQTfAmoGgGsnSRu",
+    "role": "ADMIN",
+    "username": "admin"
+  },
+  {
+    "id": "433453bd-3550-4afc-8dd1-be49e879d0d0",
+    "nome": "Silas",
+    "password": "$2a$10$OmucAbytq6qfrSNAHOAfyOciPjKI.ZHCBRnYgV0Am/bSajBkwfiWi",
+    "role": "ADMIN",
+    "username": "Silas"
+  }
+]

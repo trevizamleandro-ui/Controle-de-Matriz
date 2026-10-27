@@ -1,25 +1,33 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fornecedoresApi } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import type { Fornecedor } from '../types/database';
+
+interface FornecedorForm {
+  id?: string;
+  nome: string;
+  contato?: string;
+  telefone?: string;
+  email?: string;
+}
 
 export default function Fornecedores() {
-  const { user } = useAuth();
   const [busca, setBusca] = useState('');
-  const [form, setForm] = useState(null); // null = não está editando nem criando
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [form, setForm] = useState<FornecedorForm | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const { data: fornecedores = [], isLoading: loading, isError, refetch: carregar } = useQuery({
+  const { data: rawFornecedores = [], isLoading: loading, isError, refetch: carregar } = useQuery({
     queryKey: ['fornecedores'],
     queryFn: () => fornecedoresApi.listar(),
   });
 
+  const fornecedores: Fornecedor[] = (rawFornecedores as any)?.content || rawFornecedores || [];
   const error = isError ? 'Erro ao carregar fornecedores da base de dados.' : errorMsg;
   const setError = setErrorMsg;
 
-  const handleSalvar = async (e) => {
+  const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nome || form.nome.trim() === '') {
+    if (!form || !form.nome || form.nome.trim() === '') {
       setError('O nome do fornecedor é obrigatório.');
       return;
     }
@@ -33,18 +41,18 @@ export default function Fornecedores() {
       }
       setForm(null);
       carregar();
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Erro ao salvar fornecedor.');
     }
   };
 
-  const handleExcluir = async (id) => {
+  const handleExcluir = async (id: string) => {
     if (confirm('Deseja realmente excluir este fornecedor?')) {
       try {
         setError(null);
         await fornecedoresApi.excluir(id);
         carregar();
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message || 'Erro ao excluir fornecedor. Verifique se há reparos vinculados.');
       }
     }
@@ -63,8 +71,8 @@ export default function Fornecedores() {
           <h2 className="page-title">🏭 Fornecedores</h2>
           <p className="page-subtitle">Cadastro e gerenciamento de fornecedores de reparo</p>
         </div>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           onClick={() => { setError(null); setForm({ nome: '', contato: '', telefone: '', email: '' }); }}
           style={{ display: 'flex', alignItems: 'center', gap: 6 }}
         >
@@ -74,10 +82,10 @@ export default function Fornecedores() {
 
       <div className="glass-card" style={{ marginBottom: 20, padding: 15 }}>
         <div style={{ display: 'flex', gap: 10 }}>
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="🔎 Buscar fornecedor por nome, contato ou e-mail..." 
+          <input
+            type="text"
+            className="form-input"
+            placeholder="🔎 Buscar fornecedor por nome, contato ou e-mail..."
             value={busca}
             onChange={e => setBusca(e.target.value)}
             style={{ flex: 1, margin: 0 }}
@@ -114,15 +122,24 @@ export default function Fornecedores() {
                   <td>{f.email || <span style={{ opacity: 0.5 }}>-</span>}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                      <button 
-                        className="btn btn-secondary btn-sm" 
-                        onClick={() => { setError(null); setForm({ ...f }); }}
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setError(null);
+                          setForm({
+                            id: f.id,
+                            nome: f.nome,
+                            contato: f.contato || '',
+                            telefone: f.telefone || '',
+                            email: f.email || ''
+                          });
+                        }}
                         title="Editar fornecedor"
                       >
                         ✏️
                       </button>
-                      <button 
-                        className="btn btn-danger btn-sm" 
+                      <button
+                        className="btn btn-danger btn-sm"
                         onClick={() => handleExcluir(f.id)}
                         title="Excluir fornecedor"
                       >
@@ -153,39 +170,39 @@ export default function Fornecedores() {
                 )}
                 <div className="form-group">
                   <label className="form-label">Nome da Empresa / Fornecedor *</label>
-                  <input 
-                    className="form-input" 
-                    value={form.nome} 
-                    onChange={e => setForm({ ...form, nome: e.target.value })} 
+                  <input
+                    className="form-input"
+                    value={form.nome}
+                    onChange={e => setForm({ ...form, nome: e.target.value })}
                     placeholder="Ex: Tornearia Precision Ltda"
-                    required 
+                    required
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Nome do Contato</label>
-                  <input 
-                    className="form-input" 
-                    value={form.contato || ''} 
-                    onChange={e => setForm({ ...form, contato: e.target.value })} 
+                  <input
+                    className="form-input"
+                    value={form.contato || ''}
+                    onChange={e => setForm({ ...form, contato: e.target.value })}
                     placeholder="Ex: João Silva"
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Telefone de Contato</label>
-                  <input 
-                    className="form-input" 
-                    value={form.telefone || ''} 
-                    onChange={e => setForm({ ...form, telefone: e.target.value })} 
+                  <input
+                    className="form-input"
+                    value={form.telefone || ''}
+                    onChange={e => setForm({ ...form, telefone: e.target.value })}
                     placeholder="Ex: (11) 98765-4321"
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">E-mail de Contato</label>
-                  <input 
+                  <input
                     type="email"
-                    className="form-input" 
-                    value={form.email || ''} 
-                    onChange={e => setForm({ ...form, email: e.target.value })} 
+                    className="form-input"
+                    value={form.email || ''}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
                     placeholder="Ex: contato@tornearia.com.br"
                   />
                 </div>

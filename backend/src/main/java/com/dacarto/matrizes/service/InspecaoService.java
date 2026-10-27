@@ -60,6 +60,10 @@ public class InspecaoService {
             .orElseThrow(() -> new RuntimeException("Inspeção não encontrada: " + id));
     }
 
+    public List<Inspecao> buscarPorMatriz(UUID matrizId) {
+        return repository.findByMatrizElementoIdOrderByDataInspecaoDesc(matrizId);
+    }
+
     @Transactional
     public Inspecao criar(Inspecao inspecao) {
         // Garantir que a matriz elemento existe

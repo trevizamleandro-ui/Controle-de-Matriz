@@ -588,9 +588,7 @@ export default function Inventario() {
       quantidade_almoxarifado: item.quantidadeAlmoxarifado ?? item.quantidade_almoxarifado ?? 0,
       quantidade_maquina:      item.quantidadeMaquina      ?? item.quantidade_maquina      ?? 0,
       quantidade_reparo:       item.quantidadeReparo       ?? item.quantidade_reparo       ?? 0,
-      quantidade_total:        item.quantidadeTotal        ??
-        ((item.quantidadeAlmoxarifado ?? 0) + (item.quantidadeMaquina ?? 0) + (item.quantidadeReparo ?? 0))
-        || item.quantidadeEstoque || 0,
+      quantidade_total:        item.quantidadeTotal ?? (((item.quantidadeAlmoxarifado ?? 0) + (item.quantidadeMaquina ?? 0) + (item.quantidadeReparo ?? 0)) || item.quantidadeEstoque || 0),
     }));
   }, [rawList]);
 

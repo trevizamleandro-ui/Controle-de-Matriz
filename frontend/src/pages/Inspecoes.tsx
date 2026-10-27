@@ -221,7 +221,7 @@ function ModalInspecao({ inspecao, matrizes, onSave, onClose }) {
                           <select 
                             className="form-select" 
                             style={{ width: 180, margin: 0, padding: '4px 8px', height: '32px', fontSize: 12 }}
-                            value={val}
+                            value={String(val || '')}
                             onChange={e => {
                               setChecklistRespostas(prev => ({
                                 ...prev,
@@ -263,10 +263,10 @@ function ModalInspecao({ inspecao, matrizes, onSave, onClose }) {
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          const val = e.target.value.trim();
+                          const val = (e.target as HTMLInputElement).value.trim();
                           if (val) {
                             setChecklistRespostas(prev => ({ ...prev, [val]: "OK / Conforme" }));
-                            e.target.value = '';
+                            (e.target as HTMLInputElement).value = '';
                           }
                         }
                       }}
@@ -276,11 +276,11 @@ function ModalInspecao({ inspecao, matrizes, onSave, onClose }) {
                       className="btn btn-secondary"
                       style={{ padding: '0 16px', height: '36px' }}
                       onClick={() => {
-                        const input = document.getElementById('novoParametroAvulso');
+                        const input = document.getElementById('novoParametroAvulso') as HTMLInputElement | null;
                         const val = input ? input.value.trim() : '';
                         if (val) {
                           setChecklistRespostas(prev => ({ ...prev, [val]: "OK / Conforme" }));
-                          input.value = '';
+                          if (input) input.value = '';
                         }
                       }}
                     >
@@ -492,7 +492,7 @@ function ModalConfigChecklist({ matrizes, onSave, onClose }) {
       }
       try {
         const base64 = await fileToBase64(file);
-        setDesenhoPdf(base64);
+        setDesenhoPdf(String(base64));
       } catch (err) {
         alert('Erro ao processar PDF.');
       }
@@ -718,8 +718,8 @@ export default function Inspecoes() {
     queryFn: () => matrizesApi.listarTodos(),
   });
 
-  const inspecoes = rawInspecoes?.content || rawInspecoes || [];
-  const matrizes = rawMatrizes?.content || rawMatrizes?.data || rawMatrizes || [];
+  const inspecoes: any[] = (rawInspecoes as any)?.content || (Array.isArray(rawInspecoes) ? rawInspecoes : []);
+  const matrizes: any[] = (rawMatrizes as any)?.content || (rawMatrizes as any)?.data || (Array.isArray(rawMatrizes) ? rawMatrizes : []);
   
   const erro = isErrorInspecao ? 'Erro ao carregar dados da API.' : erroMsg;
   const setErro = setErroMsg;
@@ -893,8 +893,8 @@ export default function Inspecoes() {
         </div>
     `;
 
-    Object.values(agrupado).forEach(({ matriz, lista }) => {
-      lista.sort((a, b) => new Date(b.dataInspecao) - new Date(a.dataInspecao));
+    Object.values(agrupado).forEach(({ matriz, lista }: any) => {
+      lista.sort((a: any, b: any) => new Date(b.dataInspecao).getTime() - new Date(a.dataInspecao).getTime());
 
       const tagStr = matriz?.tagIdentificacao || 'N/A';
       const nomeStr = matriz?.nome || '—';

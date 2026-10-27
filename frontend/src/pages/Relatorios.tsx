@@ -170,7 +170,7 @@ export default function Relatorios() {
               </tbody>
               <tfoot style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #e2e8f0', fontWeight: 'bold' }}>
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'right', padding: '16px' }}>Custo Total (Filtrado):</td>
+                  <td colSpan={7} style={{ textAlign: 'right', padding: '16px' }}>Custo Total (Filtrado):</td>
                   <td style={{ textAlign: 'right', padding: '16px', color: '#004F5C', fontSize: '1.1em' }}>
                     {formatCurrency(custoGeral)}
                   </td>

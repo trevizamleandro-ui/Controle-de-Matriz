@@ -1,26 +1,32 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { maquinasApi } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+
+interface MaquinaForm {
+  id?: string;
+  nomeMaquina: string;
+  localizacao?: string;
+  descricao?: string;
+  ativa: boolean;
+}
 
 export default function Maquinas() {
-  const { user } = useAuth();
   const [busca, setBusca] = useState('');
-  const [form, setForm] = useState(null); // null = não editando nem criando
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [form, setForm] = useState<MaquinaForm | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const { data: rawMaquinas, isLoading: loading, isError, refetch: carregar } = useQuery({
     queryKey: ['maquinas'],
     queryFn: () => maquinasApi.listar(),
   });
 
-  const maquinas = rawMaquinas?.content || rawMaquinas || [];
+  const maquinas: any[] = (rawMaquinas as any)?.content || (rawMaquinas as any) || [];
   const error = isError ? 'Erro ao carregar máquinas da base de dados.' : errorMsg;
   const setError = setErrorMsg;
 
-  const handleSalvar = async (e) => {
+  const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nomeMaquina || form.nomeMaquina.trim() === '') {
+    if (!form || !form.nomeMaquina || form.nomeMaquina.trim() === '') {
       setError('O nome da máquina é obrigatório.');
       return;
     }
@@ -34,28 +40,30 @@ export default function Maquinas() {
       }
       setForm(null);
       carregar();
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Erro ao salvar máquina.');
     }
   };
 
-  const handleExcluir = async (id) => {
+  const handleExcluir = async (id: string) => {
     if (confirm('Deseja realmente excluir/desativar esta máquina?')) {
       try {
         setError(null);
         await maquinasApi.excluir(id);
         carregar();
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message || 'Erro ao excluir máquina.');
       }
     }
   };
 
-  const filteredMaquinas = maquinas.filter(m =>
-    m.nomeMaquina.toLowerCase().includes(busca.toLowerCase()) ||
-    (m.localizacao && m.localizacao.toLowerCase().includes(busca.toLowerCase())) ||
-    (m.descricao && m.descricao.toLowerCase().includes(busca.toLowerCase()))
-  );
+  const filteredMaquinas = maquinas.filter((m: any) => {
+    const nome = (m.nomeMaquina || m.nome_maquina || '').toLowerCase();
+    const loc = (m.localizacao || '').toLowerCase();
+    const desc = (m.descricao || '').toLowerCase();
+    const b = busca.toLowerCase();
+    return nome.includes(b) || loc.includes(b) || desc.includes(b);
+  });
 
   return (
     <>
@@ -64,8 +72,8 @@ export default function Maquinas() {
           <h2 className="page-title">⚙️ Máquinas</h2>
           <p className="page-subtitle">Cadastro e gerenciamento de máquinas de extrusão</p>
         </div>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           onClick={() => { setError(null); setForm({ nomeMaquina: '', localizacao: '', descricao: '', ativa: true }); }}
           style={{ display: 'flex', alignItems: 'center', gap: 6 }}
         >
@@ -75,10 +83,10 @@ export default function Maquinas() {
 
       <div className="glass-card" style={{ marginBottom: 20, padding: 15 }}>
         <div style={{ display: 'flex', gap: 10 }}>
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="🔎 Buscar máquina por nome, localização ou descrição..." 
+          <input
+            type="text"
+            className="form-input"
+            placeholder="🔎 Buscar máquina por nome, localização ou descrição..."
             value={busca}
             onChange={e => setBusca(e.target.value)}
             style={{ flex: 1, margin: 0 }}
@@ -107,9 +115,9 @@ export default function Maquinas() {
               </tr>
             </thead>
             <tbody>
-              {filteredMaquinas.map(m => (
+              {filteredMaquinas.map((m: any) => (
                 <tr key={m.id} style={{ opacity: m.ativa ? 1 : 0.6 }}>
-                  <td style={{ fontWeight: 600 }}>{m.nomeMaquina}</td>
+                  <td style={{ fontWeight: 600 }}>{m.nomeMaquina || m.nome_maquina}</td>
                   <td>{m.localizacao || <span style={{ opacity: 0.5 }}>-</span>}</td>
                   <td>{m.descricao || <span style={{ opacity: 0.5 }}>-</span>}</td>
                   <td style={{ textAlign: 'center' }}>
@@ -126,15 +134,24 @@ export default function Maquinas() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                      <button 
-                        className="btn btn-secondary btn-sm" 
-                        onClick={() => { setError(null); setForm({ ...m }); }}
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setError(null);
+                          setForm({
+                            id: m.id,
+                            nomeMaquina: m.nomeMaquina || m.nome_maquina || '',
+                            localizacao: m.localizacao || '',
+                            descricao: m.descricao || '',
+                            ativa: m.ativa ?? true
+                          });
+                        }}
                         title="Editar máquina"
                       >
                         ✏️
                       </button>
-                      <button 
-                        className="btn btn-danger btn-sm" 
+                      <button
+                        className="btn btn-danger btn-sm"
                         onClick={() => handleExcluir(m.id)}
                         title="Excluir ou desativar máquina"
                       >
@@ -165,39 +182,39 @@ export default function Maquinas() {
                 )}
                 <div className="form-group">
                   <label className="form-label">Nome da Máquina *</label>
-                  <input 
-                    className="form-input" 
-                    value={form.nomeMaquina} 
-                    onChange={e => setForm({ ...form, nomeMaquina: e.target.value })} 
+                  <input
+                    className="form-input"
+                    value={form.nomeMaquina}
+                    onChange={e => setForm({ ...form, nomeMaquina: e.target.value })}
                     placeholder="Ex: Extrusora 01"
-                    required 
+                    required
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Localização</label>
-                  <input 
-                    className="form-input" 
-                    value={form.localizacao || ''} 
-                    onChange={e => setForm({ ...form, localizacao: e.target.value })} 
+                  <input
+                    className="form-input"
+                    value={form.localizacao || ''}
+                    onChange={e => setForm({ ...form, localizacao: e.target.value })}
                     placeholder="Ex: Galpão A - Linha 2"
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Descrição</label>
-                  <textarea 
-                    className="form-input" 
-                    value={form.descricao || ''} 
-                    onChange={e => setForm({ ...form, descricao: e.target.value })} 
+                  <textarea
+                    className="form-input"
+                    value={form.descricao || ''}
+                    onChange={e => setForm({ ...form, descricao: e.target.value })}
                     placeholder="Detalhes ou características da máquina..."
                     style={{ minHeight: 80, resize: 'vertical' }}
                   />
                 </div>
                 <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
-                  <input 
+                  <input
                     type="checkbox"
                     id="ativa"
-                    checked={form.ativa} 
-                    onChange={e => setForm({ ...form, ativa: e.target.checked })} 
+                    checked={form.ativa}
+                    onChange={e => setForm({ ...form, ativa: e.target.checked })}
                   />
                   <label htmlFor="ativa" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Máquina Ativa no Sistema</label>
                 </div>

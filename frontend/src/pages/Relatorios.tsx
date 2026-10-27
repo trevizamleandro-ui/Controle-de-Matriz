@@ -54,7 +54,7 @@ export default function Relatorios() {
     queryFn: () => matrizesApi.gerarRelatorio(),
   });
 
-  const dados = rawRelatorio?.content || rawRelatorio?.data || rawRelatorio || [];
+  const dados: any[] = (rawRelatorio as any)?.content || (rawRelatorio as any)?.data || (Array.isArray(rawRelatorio) ? rawRelatorio : []);
 
   const dadosFiltrados = useMemo(() => {
     return dados.filter(item => {

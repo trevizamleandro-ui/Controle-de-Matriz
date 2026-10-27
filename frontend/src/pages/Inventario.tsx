@@ -642,6 +642,14 @@ export default function Inventario() {
     quantidadeMaquina:       row.quantidade_maquina      ?? row.quantidadeMaquina      ?? 0,
     quantidadeReparo:        row.quantidade_reparo       ?? row.quantidadeReparo       ?? 0,
     quantidadeTotal:         row.quantidade_total        ?? row.quantidadeTotal        ?? 0,
+    checklistPontos:         row.checklist_pontos || row.checklistPontos || [],
+    alturaOriginal:          row.altura_original ?? row.alturaOriginal ?? null,
+    alturaAtual:             row.altura_atual ?? row.alturaAtual ?? null,
+    alturaMinima:            row.altura_minima ?? row.alturaMinima ?? null,
+    quantidadeRetificas:     row.quantidade_retificas ?? row.quantidadeRetificas ?? 0,
+    pressao:                 row.pressao || '',
+    tipoCorte:               row.tipo_corte || row.tipoCorte || '',
+    numeroSap:               row.numero_sap || row.numeroSap || null,
   });
 
   const handleSalvar = async (dados) => {
